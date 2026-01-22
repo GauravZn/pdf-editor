@@ -1,24 +1,7 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    // Optional: verify token with backend
-    api.get("/auth/me").catch(() => {
-      localStorage.removeItem("token");
-      navigate("/login");
-    });
-  }, [navigate]);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -26,16 +9,50 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
-      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-      <p className="mb-6">You are logged in 🎉</p>
+    <div className="min-h-screen bg-zinc-900 text-zinc-100 flex flex-col items-center justify-center px-4">
 
-      <button
-        onClick={logout}
-        className="bg-red-600 text-white px-4 py-2"
+      {/* APP TITLE */}
+      <div className="mb-6 sm:mb-8 text-center">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          📄 PDF Editor
+        </h1>
+        <p className="text-zinc-400 mt-1 text-sm sm:text-base">
+          Edit • Sign • Translate PDFs
+        </p>
+      </div>
+
+      {/* DASHBOARD CARD */}
+      <div
+        className="
+          w-full
+          max-w-sm sm:max-w-md
+          bg-zinc-800 border border-zinc-700
+          rounded-xl
+          p-6 sm:p-8
+          shadow-lg
+          text-center
+        "
       >
-        Logout
-      </button>
+        <h2 className="text-xl sm:text-2xl font-semibold mb-2">
+          Dashboard
+        </h2>
+
+        <p className="text-zinc-400 mb-5 sm:mb-6 text-sm sm:text-base">
+          You are successfully logged in.
+        </p>
+
+        <button
+          onClick={logout}
+          className="
+            w-full py-2.5 rounded-md font-medium
+            bg-red-600 hover:bg-red-500
+            transition
+            text-sm sm:text-base
+          "
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 }
