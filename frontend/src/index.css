@@ -1,2 +1,12 @@
 @import "tailwindcss";
 
+:root {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Font smoothing */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Improve text rendering */
+  text-rendering: optimizeLegibility;
+}
