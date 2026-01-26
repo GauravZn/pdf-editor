@@ -1,49 +1,88 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import Signup from "./pages/Signup";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
+import Watermark from "./pages/Watermark";
+import Esign from "./pages/Esign";
+import Translate from "./pages/Translate";
+import Summarize from "./pages/Summarize";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 
-function App() {
+export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+    <Routes>
 
-        {/* Public routes */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
+      {/* DEFAULT ROUTE */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
-        <Route
-          path="/signup"
-          element={
-            <PublicRoute>
-              <Signup />
-            </PublicRoute>
-          }
-        />
+      {/* PUBLIC ROUTES */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
 
-        {/* Protected routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+      <Route
+        path="/signup"
+        element={
+          <PublicRoute>
+            <Signup />
+          </PublicRoute>
+        }
+      />
+
+      {/* PROTECTED ROUTES */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/watermark"
+        element={
+          <ProtectedRoute>
+            <Watermark />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/esign"
+        element={
+          <ProtectedRoute>
+            <Esign />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/translate"
+        element={
+          <ProtectedRoute>
+            <Translate />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/summarize"
+        element={
+          <ProtectedRoute>
+            <Summarize />
+          </ProtectedRoute>
+        }
+      />
+
+    </Routes>
   );
 }
-
-export default App;
