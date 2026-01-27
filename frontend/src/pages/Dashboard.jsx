@@ -53,17 +53,41 @@ export default function Dashboard() {
           onClick={() => navigate("/summarize")}
         />
 
+        <FeatureCard
+          title="Change Font"
+          icon="🔤"
+          description="Replace PDF fonts with a professional style"
+          onClick={() => navigate("/change-font")}
+        />
+
+        <FeatureCard
+          title="Scanned to Standard"
+          icon="📄"
+          description="Convert scanned PDFs into selectable and editable text"
+          onClick={() => navigate("/scanned-to-standard")}
+        />
       </div>
 
       {/* FOOTER */}
-      <div className="max-w-6xl mx-auto mt-10">
+      <div className="max-w-6xl mx-auto mt-10 flex justify-end">
         <button
           onClick={logout}
-          className="text-sm text-red-400 hover:underline"
+          className="
+      inline-flex items-center gap-2
+      px-4 py-2
+      text-sm font-medium
+      text-red-400
+      border border-red-500/30
+      rounded-md
+      hover:bg-red-500/10
+      hover:text-red-300
+      transition
+    "
         >
           Logout
         </button>
       </div>
+
 
     </div>
   );

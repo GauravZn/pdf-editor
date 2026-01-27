@@ -1,7 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import api from "../api/axios";
 
+
 export default function Watermark() {
+    const navigate = useNavigate();
     const [file, setFile] = useState(null);
     const [text, setText] = useState("");
     const [opacity, setOpacity] = useState(0.3);
@@ -61,6 +65,24 @@ export default function Watermark() {
     return (
         <div className="min-h-screen bg-zinc-900 text-zinc-100 px-4 py-8">
             <div className="max-w-md mx-auto bg-zinc-800 border border-zinc-700 rounded-xl p-6 shadow-lg">
+
+                {/* BACK TO HOME */}
+                <button
+                    onClick={() => navigate("/dashboard")}
+                    title="Back to Home"
+                    aria-label="Back to Home"
+                    className="
+    fixed top-4 left-4 z-50
+    p-2 rounded-full
+    bg-zinc-800 border border-zinc-700
+    text-zinc-300
+    hover:text-white hover:bg-zinc-700
+    transition
+  "
+                >
+                    <ArrowLeft size={18} />
+                </button>
+
 
                 <h1 className="text-2xl font-semibold text-center mb-6">
                     Add Watermark

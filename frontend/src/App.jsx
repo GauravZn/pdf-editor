@@ -7,6 +7,9 @@ import Watermark from "./pages/Watermark";
 import Esign from "./pages/Esign";
 import Translate from "./pages/Translate";
 import Summarize from "./pages/Summarize";
+import Changefont from "./pages/Changefont";
+import ScannedToStandard from "./pages/ScannedToStandard";
+
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
@@ -82,7 +85,17 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/change-font"
+        element={
+          <ProtectedRoute>
+            <Changefont />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/scanned-to-standard" element={<ProtectedRoute>
+            <ScannedToStandard />
+          </ProtectedRoute>} />
     </Routes>
   );
 }
