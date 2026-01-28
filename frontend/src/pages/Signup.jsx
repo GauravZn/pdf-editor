@@ -11,6 +11,11 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // 🔐 NEW STATES (NON-UI BREAKING)
+  const [privateKey, setPrivateKey] = useState(null);
+  const [copied, setCopied] = useState(false);
+
   const navigate = useNavigate();
 
   const handleEmailBlur = () => {
@@ -27,18 +32,21 @@ export default function Signup() {
 
     try {
       setLoading(true);
+      const res = await api.post("/auth/signup", { email, password });
 
-      await api.post("/auth/signup", { email, password });
-
-      const loginRes = await api.post("/auth/login", { email, password });
-      localStorage.setItem("token", loginRes.data.token);
-
-      navigate("/dashboard");
+      // 🔐 STORE PRIVATE KEY (NO ALERT)
+      setPrivateKey(res.data.privateKey);
     } catch (err) {
       alert(err.response?.data?.message || "Signup failed");
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyPrivateKey = async () => {
+    await navigator.clipboard.writeText(privateKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -171,6 +179,50 @@ export default function Signup() {
           </span>
         </p>
       </div>
+
+      {/* 🔐 PRIVATE KEY MODAL (UI SAFE) */}
+      {privateKey && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 max-w-lg w-full shadow-xl">
+
+            <h3 className="text-red-400 font-semibold mb-2">
+              ⚠ Save your private key
+            </h3>
+
+            <p className="text-zinc-400 text-sm mb-3">
+              This key will be shown <b>only once</b>. Losing it means you
+              cannot sign PDFs.
+            </p>
+
+            <textarea
+              readOnly
+              value={privateKey}
+              className="
+                w-full h-40 p-3 text-xs
+                bg-zinc-950 border border-zinc-700
+                rounded-md text-zinc-100 font-mono
+                resize-none
+              "
+            />
+
+            <div className="flex justify-between items-center mt-4">
+              <button
+                onClick={copyPrivateKey}
+                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm"
+              >
+                {copied ? "✅ Copied" : "Copy private key"}
+              </button>
+
+              <button
+                onClick={() => navigate("/login")}
+                className="px-3 py-2 bg-green-600 hover:bg-green-500 rounded-md text-sm"
+              >
+                I have saved it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

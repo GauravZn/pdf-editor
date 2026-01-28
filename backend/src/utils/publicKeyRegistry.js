@@ -7,20 +7,24 @@ const registryPath = path.join(
   "public-key-registry.json"
 );
 
-
 export function addPublicKey({ email, name, publicKey }) {
-  // Read existing registry
-  const raw = fs.readFileSync(registryPath, "utf8");
-  const data = JSON.parse(raw);
+  // Ensure directory exists
+  fs.mkdirSync(path.dirname(registryPath), { recursive: true });
 
-  // Append new public key entry
-  data.keys.push({
+  let registry = { users: [] };
+
+  if (fs.existsSync(registryPath)) {
+    registry = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
+  }
+
+  registry.users.push({
     email,
     name,
     publicKey,
     createdAt: new Date().toISOString(),
   });
 
-  // Write back to file (backend only)
-  fs.writeFileSync(registryPath, JSON.stringify(data, null, 2));
+  fs.writeFileSync(registryPath, JSON.stringify(registry, null, 2), {
+    mode: 0o600, // read/write for owner only
+  });
 }
