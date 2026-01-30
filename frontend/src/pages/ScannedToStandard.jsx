@@ -20,7 +20,7 @@ export default function ScannedToStandard() {
         </p>
 
         <div className="inline-block px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-zinc-700 text-zinc-300">
-          Coming soon 🚧
+          Coming soon
         </div>
       </div>
     </div>

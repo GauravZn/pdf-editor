@@ -6,7 +6,7 @@ import { Eye, EyeOff } from "lucide-react";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // to toggle password visibility in the input field
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -16,7 +16,10 @@ export default function Login() {
     try {
       setLoading(true);
       const res = await api.post("/auth/login", { email, password });
+      
+      // set the token in local storage. 
       localStorage.setItem("token", res.data.token);
+      
       navigate("/dashboard");
     } catch {
       alert("Invalid credentials");

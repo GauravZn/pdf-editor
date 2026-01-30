@@ -9,14 +9,14 @@ export default function Translate() {
           shadow-lg text-center
         "
       >
-        <div className="text-4xl mb-3">🌍</div>
+        <div className="text-4xl mb-3"> </div>
 
         <h1 className="text-2xl sm:text-3xl font-semibold mb-2">
-          Translate PDF
+          ESign PDF
         </h1>
 
         <p className="text-zinc-400 text-sm sm:text-base mb-6">
-          Translate your documents into multiple languages with ease.
+          Sign your documents digitally with ease.
         </p>
 
         <div className="inline-block px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-zinc-700 text-zinc-300">
