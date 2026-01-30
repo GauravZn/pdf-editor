@@ -1,9 +1,9 @@
-// Reusable card component.
-
 export default function FeatureCard({ title, icon, description, onClick }) {
   return (
     <button
-      onClick={onClick} className="bg-zinc-800 border border-zinc-700
+      onClick={onClick}
+      className="
+        bg-zinc-800 border border-zinc-700
         rounded-xl p-5 text-left
         hover:border-indigo-500 hover:bg-zinc-750
         transition

@@ -9,7 +9,7 @@ export default function Summarize() {
           shadow-lg text-center
         "
       >
-        <div className="text-4xl mb-3">📝</div>
+        <div className="text-4xl mb-3">🧠</div>
 
         <h1 className="text-2xl sm:text-3xl font-semibold mb-2">
           Summarize PDF
