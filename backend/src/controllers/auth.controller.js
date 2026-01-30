@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import pool from "../db.js";
 import dotenv from "dotenv"
 import crypto from "crypto";
-import { addPublicKey } from "../utils/publicKeyRegistry.js";
 dotenv.config()
 
 export const signup = async (req, res) => {
