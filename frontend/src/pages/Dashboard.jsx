@@ -68,26 +68,11 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* FOOTER */}
       <div className="max-w-6xl mx-auto mt-10 flex justify-end">
-        <button
-          onClick={logout}
-          className="
-      inline-flex items-center gap-2
-      px-4 py-2
-      text-sm font-medium
-      text-red-400
-      border border-red-500/30
-      rounded-md
-      hover:bg-red-500/10
-      hover:text-red-300
-      transition
-    "
-        >
+        <button onClick={logout} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-md hover:bg-red-500/10 hover:text-red-300  transition">
           Logout
         </button>
       </div>
-
 
     </div>
   );

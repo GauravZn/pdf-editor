@@ -1,62 +1,68 @@
-import React, { useState, useEffect, useRef } from 'react'; // import React and hooks used in this component
-import { createWatermarkImage } from '../../utils/textToImage.js'; // import helper to render watermark text as an image
-import { processPdf } from '../../hooks/usePdfProcessor.js'; // import PDF processing function to embed watermark into PDF bytes
-import { Upload, Download, Type, RotateCw, Ghost, Maximize, Palette } from 'lucide-react'; // import icon components from lucide-react
-
+import React, { useState, useEffect, useRef } from 'react';
+import { createWatermarkImage } from '../../utils/textToImage.js';
+import { processPdf } from '../../hooks/usePdfProcessor.js';
+import { Upload, Type, RotateCw, Ghost, Maximize, LayoutGrid, Palette } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist'; // import PDF.js library for client-side PDF rendering
 import GlobalWorker from 'pdfjs-dist/build/pdf.worker.mjs?url'; // Vite-specific PDF worker loader import
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = GlobalWorker; // tell PDF.js where the worker script is located
 
-export default function WatermarkTool() { // define and export the main component
-  const [file, setFile] = useState(null); // store the uploaded File object
-  const [text, setText] = useState("text"); // store watermark text string
-  const [watermarkImg, setWatermarkImg] = useState(null); // store data URL of generated watermark image
-  const [isProcessing, setIsProcessing] = useState(false); // flag while embedding watermark into PDF
-  
-  const [settings, setSettings] = useState({ // store watermark appearance and layout settings
-    color: '#808080', // default text color
-    rotation: 45, // default rotation degrees
-    opacity: 0.4, // default opacity 0..1
-    scale: 0.3, // default scale (fraction of container)
-    fontFamily: 'sans-serif', // default font family
-    position: 'center' // default position keyword
+export default function WatermarkTool() {
+
+  const [file, setFile] = useState(null);
+  const [text, setText] = useState("text");
+  const [watermarkImg, setWatermarkImg] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const [settings, setSettings] = useState({
+    color: '#808080',
+    rotation: 45,
+    opacity: 0.4,
+    scale: 0.3,
+    fontFamily: 'sans-serif',
+    position: 'center'
   });
 
-  const positions = [ // list of supported position keywords
+  const positions = [
     'top-left', 'top-center', 'top-right',
     'middle-left', 'center', 'middle-right',
     'bottom-left', 'bottom-center', 'bottom-right'
   ];
 
-  const canvasRef = useRef(null); // ref to the canvas used for PDF preview
-  const fileInputRef = useRef(null); // ref to the hidden file input element
+  const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // FIX: Stable PDF Rendering
-  useEffect(() => { // when `file` changes, render the first PDF page to canvas
+  // when `file` changes, render the first PDF page to canvas
+  useEffect(() => {
     if (!file) return; // do nothing if no file selected
-    const render = async () => { // async function to read and render PDF
-      const buffer = await file.arrayBuffer(); // read file into an ArrayBuffer
+
+    const render = async () => {
+      const buffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: buffer }).promise; // load PDF document
       const page = await pdf.getPage(1); // get the first page
-      const viewport = page.getViewport({ scale: 1.2 }); // set a viewport scale for nicer preview
+      const viewport = page.getViewport({ scale: 1.0 }); // set a viewport scale for nicer preview
       const canvas = canvasRef.current; // obtain canvas DOM node
       const context = canvas.getContext('2d'); // get 2D drawing context
       canvas.width = viewport.width; // set canvas pixel width
       canvas.height = viewport.height; // set canvas pixel height
       await page.render({ canvasContext: context, viewport }).promise; // render the PDF page onto canvas
     };
-    render(); // call the async renderer
-  }, [file]); // re-run when `file` changes
 
-  // Sync Watermark Preview
+    render();
+
+  }, [file]);
+
+
   useEffect(() => { // regenerate watermark image whenever text or settings change
-    createWatermarkImage(text, settings).then(setWatermarkImg); // create the data URL and store it
-  }, [text, settings]); // dependencies for watermark generation
+    createWatermarkImage(text, settings).then((result) => setWatermarkImg(result)); // create the data URL and store it
+  }, [text, settings]);
 
-  const handleDownload = async () => { // called when user clicks Download PDF
-    if (!file || !watermarkImg) return; // require file and watermark image
-    setIsProcessing(true); // set processing flag
+  const handleDownload = async () => {
+
+    if (!file || !watermarkImg) return;
+
+    setIsProcessing(true);
+
     try {
       const buffer = await file.arrayBuffer(); // read input PDF as ArrayBuffer
       const bytes = await processPdf(buffer, watermarkImg, settings); // embed watermark and get modified bytes
@@ -66,74 +72,281 @@ export default function WatermarkTool() { // define and export the main componen
       link.download = `watermarked.pdf`; // set suggested filename
       link.click(); // trigger download
     } catch (e) { console.error(e); } // log any error
-    setIsProcessing(false); // clear processing flag
+    setIsProcessing(false);
   };
 
   return ( // component JSX return
     <div className="flex h-screen bg-[#09090b] text-zinc-100 font-sans overflow-hidden"> {/* top-level layout container */}
       {/* SIDEBAR */}
-      <aside className="w-80 bg-[#121214] border-r border-zinc-800 p-6 flex flex-col space-y-6 shadow-2xl z-20"> {/* left sidebar for controls */}
-        <h1 className="text-xl font-bold">Watermark Editor</h1> {/* title */}
+      <aside className="w-80 bg-[#121214] border-r border-zinc-800 p-6 flex flex-col space-y-6 shadow-2xl z-20">
+        <h1 className="text-xl font-bold">Watermark Editor</h1>
 
         <div className="space-y-4"> {/* group of control blocks */}
           <div className="space-y-2"> {/* text input block */}
             <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2"><Type size={14} /> Text</label> {/* label with icon */}
-            <input className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 outline-none focus:ring-1 focus:ring-blue-500" value={text} onChange={(e) => setText(e.target.value)} /> {/* text input bound to `text` state */}
+            <input className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 outline-none focus:ring-1 focus:ring-blue-500" value={text} onChange={(e) => setText(e.target.value)} />
           </div>
 
-          <div className="space-y-2"> {/* color picker block */}
-            <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2"><Palette size={14} /> Color</label> {/* label with palette icon */}
-            <div className="flex items-center gap-3 bg-zinc-900 p-2 rounded-lg border border-zinc-800"> {/* color control container */}
-              <input type="color" className="w-8 h-8 bg-transparent border-none cursor-pointer" value={settings.color} onChange={(e) => setSettings({ ...settings, color: e.target.value })} /> {/* native color input updating settings.color */}
-              <span className="text-sm font-mono uppercase">{settings.color}</span> {/* show hex color value */}
+          <div className="space-y-3">
+            <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
+              <Palette size={14} /> Watermark Color
+            </label>
+
+            {/* Professional Swatches */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {[
+                { name: 'Stamp Red', hex: '#ef4444' },
+                { name: 'Security Blue', hex: '#3b82f6' },
+                { name: 'Formal Black', hex: '#18181b' },
+                { name: 'Soft Slate', hex: '#64748b' },
+              ].map((preset) => (
+                <button
+                  key={preset.hex}
+                  onClick={() => setSettings({ ...settings, color: preset.hex })}
+                  className={`w-6 h-6 ring-2 ring-zinc-700 rounded-full border-2 transition-transform hover:scale-110 ${settings.color === preset.hex ? 'border-white scale-110' : 'border-transparent'
+                    }`}
+                  style={{ backgroundColor: preset.hex }}
+                  title={preset.name}
+                />
+              ))}
+            </div>
+
+            {/* Custom Color Control */}
+            <div className="flex items-center gap-3 bg-zinc-900 p-2 rounded-xl border border-zinc-800 group hover:border-zinc-700 transition-colors">
+              <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-zinc-700">
+                <input
+                  type="color"
+                  className="absolute -inset-2 w-12 h-12 bg-transparent border-none cursor-pointer"
+                  value={settings.color}
+                  onChange={(e) => setSettings({ ...settings, color: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-zinc-500 font-bold uppercase leading-none mb-1">Custom Hex</span>
+                <span className="text-sm font-mono uppercase text-zinc-200">{settings.color}</span>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2"> {/* rotation slider block */}
-            <div className="flex justify-between text-xs font-bold text-zinc-500 uppercase"><label className="flex items-center gap-2"><RotateCw size={14} /> Rotation</label><span>{settings.rotation}°</span></div> {/* label + value */}
-            <input type="range" min="-180" max="180" className="w-full accent-blue-600" value={settings.rotation} onChange={(e) => setSettings({ ...settings, rotation: parseInt(e.target.value) })} /> {/* slider to set rotation */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-end">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
+                  <RotateCw size={14} /> Orientation
+                </label>
+                <p className="text-[10px] text-zinc-600 font-medium">Tilt your watermark</p>
+              </div>
+              <span className="text-sm font-mono font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded">
+                {settings.rotation}°
+              </span>
+            </div>
+
+            {/* Quick Snap Angles */}
+            <div className="flex justify-between gap-1">
+              {[0, 45, 90, -45].map((angle) => (
+                <button
+                  key={angle}
+                  onClick={() => setSettings({ ...settings, rotation: angle })}
+                  className={`flex-1 py-1.5 text-[10px] font-bold rounded-md border transition-all ${settings.rotation === angle
+                    ? 'bg-zinc-800 border-zinc-600 text-zinc-100 shadow-sm'
+                    : 'bg-transparent border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                    }`}
+                >
+                  {angle === 0 ? 'Flat' : `${angle}°`}
+                </button>
+              ))}
+            </div>
+
+            {/* Visual Slider */}
+            <div className="relative flex items-center group">
+              <input
+                type="range"
+                min="-180"
+                max="180"
+                className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                value={settings.rotation}
+                onChange={(e) => setSettings({ ...settings, rotation: parseInt(e.target.value) })}
+              />
+
+              {/* Visual Center Notch */}
+              <div className="absolute left-1/2 -bottom-1 w-px h-2 bg-zinc-700 -translate-x-1/2 pointer-events-none" />
+            </div>
+
+            {/* Reset Button (only shows when not at 0) */}
+            {settings.rotation !== 0 && (
+              <button
+                onClick={() => setSettings({ ...settings, rotation: 0 })}
+                className="text-[10px] font-bold text-zinc-500 hover:text-blue-500 transition-colors flex items-center gap-1 mx-auto"
+              >
+                Reset to Horizontal
+              </button>
+            )}
           </div>
 
-          <div className="space-y-2"> {/* scale slider block */}
-            <div className="flex justify-between text-xs font-bold text-zinc-500 uppercase"><label className="flex items-center gap-2"><Maximize size={14} /> Scale</label><span>{Math.round(settings.scale * 100)}%</span></div> {/* label + percent */}
-            <input type="range" min="0.1" max="1" step="0.05" className="w-full accent-blue-600" value={settings.scale} onChange={(e) => setSettings({ ...settings, scale: parseFloat(e.target.value) })} /> {/* slider to control scale */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-end">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
+                  <Maximize size={14} /> Watermark Size
+                </label>
+                <p className="text-[10px] text-zinc-600 font-medium">Relative to page width</p>
+              </div>
+              <span className="text-sm font-mono font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded">
+                {Math.round(settings.scale * 100)}%
+              </span>
+            </div>
+
+            {/* Semantic Presets */}
+            <div className="flex justify-between gap-1">
+              {[
+                { label: 'Small', val: 0.15 },
+                { label: 'Standard', val: 0.35 },
+                { label: 'Large', val: 0.65 },
+                { label: 'Full', val: 0.90 }
+              ].map((preset) => (
+                <button
+                  key={preset.label}
+                  onClick={() => setSettings({ ...settings, scale: preset.val })}
+                  className={`flex-1 py-1.5 text-[10px] font-bold rounded-md border transition-all ${Math.abs(settings.scale - preset.val) < 0.01
+                    ? 'bg-zinc-800 border-zinc-600 text-zinc-100'
+                    : 'bg-transparent border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                    }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Precision Slider */}
+            <div className="space-y-2">
+              <input
+                type="range"
+                min="0.05"
+                max="1"
+                step="0.01"
+                className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                value={settings.scale}
+                onChange={(e) => setSettings({ ...settings, scale: parseFloat(e.target.value) })}
+              />
+              <div className="flex justify-between text-[9px] text-zinc-600 font-bold px-1 uppercase tracking-tighter">
+                <span>Tiny</span>
+                <span>Cover Page</span>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2"> {/* opacity slider block */}
-            <div className="flex justify-between text-xs font-bold text-zinc-500 uppercase"><label className="flex items-center gap-2"><Ghost size={14} /> Opacity</label><span>{Math.round(settings.opacity * 100)}%</span></div> {/* label + percent */}
-            <input type="range" min="0" max="1" step="0.1" className="w-full accent-blue-600" value={settings.opacity} onChange={(e) => setSettings({ ...settings, opacity: parseFloat(e.target.value) })} /> {/* slider to control opacity */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-end">
+              <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
+                <Ghost size={14} /> Transparency
+              </label>
+              <span className="text-sm font-mono font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded">
+                {Math.round(settings.opacity * 100)}%
+              </span>
+            </div>
+
+            <div className="relative flex items-center bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
+              {/* Corrected: 0% is Ghost, 100% is Solid */}
+              <span className="text-[10px] font-bold text-zinc-600 mr-3 uppercase tracking-tighter">Ghost</span>
+
+              <input
+                type="range"
+                min="0.05"
+                max="1"
+                step="0.05"
+                className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                value={settings.opacity}
+                onChange={(e) => setSettings({ ...settings, opacity: parseFloat(e.target.value) })}
+              />
+
+              <span className="text-[10px] font-bold text-zinc-600 ml-3 uppercase tracking-tighter">Solid</span>
+            </div>
+
+            <p className="text-[10px] text-zinc-600 text-center italic">
+              Lower opacity works best for background watermarks
+            </p>
           </div>
 
-          <div className="space-y-2"> {/* position picker block */}
-            <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">Position</label> {/* label */}
-            <div className="grid grid-cols-3 gap-2 bg-zinc-900 p-2 rounded-lg border border-zinc-800"> {/* grid of position buttons */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
+                <LayoutGrid size={14} /> Anchor
+              </label>
+              <span className="text-[10px] font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                {settings.position.replace('-', ' ')}
+              </span>
+            </div>
+
+            {/* Added max-w-[160px] and mx-auto to tighten the width */}
+            <div className="grid grid-cols-3 gap-1.5 bg-[#09090b] p-1.5 rounded-xl border border-zinc-800 shadow-inner max-w-[160px] mx-auto">
               {positions.map((pos) => (
                 <button
-                  key={pos} // unique key for list rendering
-                  onClick={() => setSettings({ ...settings, position: pos })} // set chosen position
-                  className={`h-8 rounded border transition-all ${settings.position === pos
-                      ? 'bg-blue-600 border-blue-400'
-                      : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500'
-                    }`} // toggle styles for selected state
-                  title={pos} // accessibility/title text
-                />
+                  key={pos}
+                  onClick={() => setSettings({ ...settings, position: pos })}
+                  className={`h-7 rounded-md border flex items-center justify-center transition-all duration-200 ${settings.position === pos
+                      ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+                      : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
+                    }`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full transition-all ${settings.position === pos
+                      ? 'bg-blue-400 scale-125 shadow-[0_0_5px_#3b82f6]'
+                      : 'bg-zinc-700'
+                    }`} />
+                </button>
               ))}
             </div>
           </div>
 
-          <div className="space-y-2"> {/* font family selector */}
-            <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">Font Style</label> {/* label */}
-            <select
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 outline-none"
-              value={settings.fontFamily}
-              onChange={(e) => setSettings({ ...settings, fontFamily: e.target.value })}
-            >
-              <option value="sans-serif">Sans Serif</option> {/* option */}
-              <option value="serif">Serif</option> {/* option */}
-              <option value="monospace">Monospace</option> {/* option */}
-              <option value="cursive">Cursive</option> {/* option */}
-            </select>
-          </div>
+          <div className="space-y-3">
+  <div className="flex justify-between items-center px-1">
+    <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
+      <Type size={14} /> Typography
+    </label>
+    <span className="text-[10px] font-mono text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded">
+      {settings.fontFamily}
+    </span>
+  </div>
+
+  <div className="grid grid-cols-2 gap-2">
+    {[
+      { label: 'Ag', value: 'Helvetica', name: 'Sans' },
+      { label: 'Ag', value: 'Times-Roman', name: 'Serif' },
+      { label: 'Ag', value: 'Courier', name: 'Mono' },
+      { label: 'Ag', value: 'Times-BoldItalic', name: 'Elegant' },
+    ].map((font) => (
+      <button
+        key={font.value}
+        onClick={() => setSettings({ ...settings, fontFamily: font.value })}
+        className={`flex items-center gap-3 p-2 rounded-xl border transition-all duration-200 ${
+          settings.fontFamily === font.value
+            ? 'bg-blue-600/10 border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.1)]'
+            : 'bg-[#09090b] border-zinc-800 hover:border-zinc-700'
+        }`}
+      >
+        {/* Visual Preview Square */}
+        <div 
+          className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg shadow-sm ${
+            settings.fontFamily === font.value ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'
+          }`}
+          style={{ 
+            fontFamily: font.value === 'Times-Roman' || font.value === 'Times-BoldItalic' ? 'serif' : 
+                        font.value === 'Courier' ? 'monospace' : 'sans-serif',
+            fontStyle: font.value.includes('Italic') ? 'italic' : 'normal',
+            fontWeight: font.value.includes('Bold') ? 'bold' : 'normal'
+          }}
+        >
+          {font.label}
+        </div>
+        
+        <span className={`text-[11px] font-bold uppercase tracking-tight ${
+          settings.fontFamily === font.value ? 'text-blue-400' : 'text-zinc-500'
+        }`}>
+          {font.name}
+        </span>
+      </button>
+    ))}
+  </div>
+</div>
         </div>
 
         <button onClick={handleDownload} disabled={!file || isProcessing} className="w-full mt-auto bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold transition-all disabled:bg-zinc-800"> {/* download button */}
@@ -149,17 +362,15 @@ export default function WatermarkTool() { // define and export the main componen
             <canvas ref={canvasRef} className="block shadow-inner" />{/* canvas used for PDF page rendering */}
 
             {/* Watermark Overlay Layer */}
-            
-            <div className={`absolute inset-0 pointer-events-none flex p-8 ${
-              settings.position.includes('top') ? 'items-start' : 
+
+            <div className={`absolute inset-0 pointer-events-none flex p-8 ${settings.position.includes('top') ? 'items-start' :
               settings.position.includes('bottom') ? 'items-end' : 'items-center'
-            } ${
-              settings.position.includes('left') ? 'justify-start' : 
-              settings.position.includes('right') ? 'justify-end' : 'justify-center'
-            }`}>{/* overlay container positioned according to settings */}
+              } ${settings.position.includes('left') ? 'justify-start' :
+                settings.position.includes('right') ? 'justify-end' : 'justify-center'
+              }`}>{/* overlay container positioned according to settings */}
               {watermarkImg && ( // only render the img element if watermark image is ready
-                <img 
-                  src={watermarkImg} 
+                <img
+                  src={watermarkImg}
                   style={{
                     width: `${settings.scale * 100}%`, // scale width based on settings
                     transform: `rotate(${-settings.rotation}deg)`, // rotate according to settings (note sign)

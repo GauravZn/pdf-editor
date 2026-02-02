@@ -1,3 +1,4 @@
+// placeholder page for Scanned to Standard feature.
 export default function ScannedToStandard() {
   return (
     <div className="min-h-screen bg-zinc-900 text-zinc-100 flex items-center justify-center px-4">
