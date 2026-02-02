@@ -1,4 +1,4 @@
-import { PDFDocument, degrees } from 'pdf-lib';
+import { PDFDocument, degrees, rgb } from 'pdf-lib';
 
 
 export const processPdf = async (pdfBuffer, watermarkUrl, settings) => { 
@@ -38,6 +38,20 @@ export const processPdf = async (pdfBuffer, watermarkUrl, settings) => {
       rotate: degrees(settings.rotation), // rotate image by settings.rotation degrees
       opacity: parseFloat(settings.opacity), // apply opacity (pdf-lib expects a number)
     });
+
+    // 2. THE HUMANE FLATTEN: The "Invisible Shield"
+    if (settings.flatten) {
+      page.drawRectangle({
+        x: 0,
+        y: 0,
+        width: pageWidth,
+        height: pageHeight,
+        color: rgb(0,0,0), // Using a "color" instead of just opacity (RGB values for #010101)
+        opacity: 0.01,
+        borderWidth: 0,
+      });
+      console.log("Flatten applied: Invisible shield added.");
+    }
   });
 
   return await pdfDoc.save(); 

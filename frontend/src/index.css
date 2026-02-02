@@ -36,3 +36,19 @@
   scrollbar-width: thin;
   scrollbar-color: #6366f1 #18181b;
 }
+
+
+/* Custom Scrollbar for the sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a; /* zinc-800 */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46; /* zinc-700 */
+}
