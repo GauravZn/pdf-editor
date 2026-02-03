@@ -18,8 +18,8 @@ export default function WatermarkTool() {
     color: '#808080',
     rotation: 45,
     opacity: 0.4,
-    scale: 0.3,
-    fontFamily: 'sans-serif',
+    scale: 0.35,
+    fontFamily: 'Times-Roman',
     position: 'center',
     flatten: false,
   });
@@ -194,7 +194,6 @@ export default function WatermarkTool() {
                   <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
                     <Maximize size={14} /> Watermark Size
                   </label>
-                  <p className="text-[10px] text-zinc-600 font-medium">Relative to page width</p>
                 </div>
                 <span className="text-sm font-mono font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded">
                   {Math.round(settings.scale * 100)}%
@@ -267,9 +266,7 @@ export default function WatermarkTool() {
                 <span className="text-[10px] font-bold text-zinc-600 ml-3 uppercase tracking-tighter">Solid</span>
               </div>
 
-              <p className="text-[10px] text-zinc-600 text-center italic">
-                Lower opacity works best for background watermarks
-              </p>
+             
             </div>
 
             <div className="space-y-3">
@@ -314,10 +311,10 @@ export default function WatermarkTool() {
 
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { label: 'Ag', value: 'Helvetica', name: 'Sans' },
                   { label: 'Ag', value: 'Times-Roman', name: 'Serif' },
+                  { label: 'Ag', value: 'Helvetica', name: 'Sans' },
                   { label: 'Ag', value: 'Courier', name: 'Mono' },
-                  { label: 'Ag', value: 'Times-BoldItalic', name: 'Elegant' },
+                  { label: 'Ag', value: 'comic', name: 'comic' },
                 ].map((font) => (
                   <button
                     key={font.value}
@@ -332,7 +329,7 @@ export default function WatermarkTool() {
                       className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg shadow-sm ${settings.fontFamily === font.value ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'
                         }`}
                       style={{
-                        fontFamily: font.value === 'Times-Roman' || font.value === 'Times-BoldItalic' ? 'serif' :
+                        fontFamily: font.value === 'comic'?'comic sans ms': font.value === 'Times-Roman' || font.value === 'Times-BoldItalic' ? 'serif' :
                           font.value === 'Courier' ? 'monospace' : 'sans-serif',
                         fontStyle: font.value.includes('Italic') ? 'italic' : 'normal',
                         fontWeight: font.value.includes('Bold') ? 'bold' : 'normal'
@@ -341,8 +338,13 @@ export default function WatermarkTool() {
                       {font.label}
                     </div>
 
-                    <span className={`text-[11px] font-bold uppercase tracking-tight ${settings.fontFamily === font.value ? 'text-blue-400' : 'text-zinc-500'
-                      }`}>
+                    <span className={`text-[13px] font-bold  tracking-tight ${settings.fontFamily === font.value ? 'text-blue-400' : 'text-zinc-500'}`}
+                    style={{
+                        fontFamily: font.value === 'comic'?'comic sans ms': font.value === 'Times-Roman' || font.value === 'Times-BoldItalic' ? 'serif' :
+                          font.value === 'Courier' ? 'monospace' : 'sans-serif',
+                        fontStyle: font.value.includes('Italic') ? 'italic' : 'normal',
+                        fontWeight: font.value.includes('Bold') ? 'bold' : 'normal'
+                      }}>
                       {font.name}
                     </span>
                   </button>
@@ -358,7 +360,7 @@ export default function WatermarkTool() {
                     <Shield size={14} className={settings.flatten ? "text-blue-400" : "text-zinc-500"} />
                     Copy Protection
                   </label>
-                  <p className="text-[10px] text-zinc-500 leading-tight">Add invisible layer to block selection</p>
+                  <p className="text-[10px] text-zinc-500 leading-tight">Add gibberish layer to pollute block selection.</p>
                 </div>
 
                 <button
