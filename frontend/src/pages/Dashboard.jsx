@@ -66,6 +66,12 @@ export default function Dashboard() {
           description="Convert scanned PDFs into selectable and editable text"
           onClick={() => navigate("/scanned-to-standard")}
         />
+        <FeatureCard
+          title="Receipt Generator"
+          icon="📄"
+          description="Generate receipts for your documents"
+          onClick={() => navigate("/receipt-generator")}
+        />
       </div>
 
       <div className="max-w-6xl mx-auto mt-10 flex justify-end">

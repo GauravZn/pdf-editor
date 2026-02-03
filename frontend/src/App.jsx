@@ -9,10 +9,9 @@ import Translate from "./pages/Translate";
 import Summarize from "./pages/Summarize";
 import Changefont from "./pages/Changefont";
 import ScannedToStandard from "./pages/ScannedToStandard";
-
-
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
+import ReceiptGenerator from "./pages/RecieptGenerator";
 
 export default function App() {
   return (
@@ -95,6 +94,10 @@ export default function App() {
       />
       <Route path="/scanned-to-standard" element={<ProtectedRoute>
             <ScannedToStandard />
+          </ProtectedRoute>} />
+
+      <Route path="/receipt-generator" element={<ProtectedRoute>
+            <ReceiptGenerator />
           </ProtectedRoute>} />
     </Routes>
   );
