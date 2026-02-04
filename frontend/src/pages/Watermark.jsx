@@ -1,18 +1,51 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createWatermarkImage } from '../../utils/textToImage.js';
 import { processPdf } from '../../hooks/usePdfProcessor.js';
-import { Upload, Type, RotateCw, Ghost, Maximize,Shield, LayoutGrid, Palette } from 'lucide-react';
+import { Upload, Type, RotateCw, Ghost, Maximize, Shield, LayoutGrid, Palette } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist'; // import PDF.js library for client-side PDF rendering
 import GlobalWorker from 'pdfjs-dist/build/pdf.worker.mjs?url'; // Vite-specific PDF worker loader import
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = GlobalWorker; // tell PDF.js where the worker script is located
 
+
+
+
 export default function WatermarkTool() {
+
+
+  const getPdfDimensions = async (fileUrl) => {
+    if (!fileUrl) return null;
+    try {
+      // 1. Load the document
+      const loadingTask = pdfjsLib.getDocument(fileUrl);
+      const pdf = await loadingTask.promise;
+
+      // 2. Get the specific page (1-based index)
+      const page = await pdf.getPage(1);
+
+      // 3. Get the viewport at scale 1.0
+      const viewport = page.getViewport({ scale: 1 });
+
+      // Width and Height are in points (1pt = 1/72 inch)
+      console.log(`Width: ${viewport.width}pt, Height: ${viewport.height}pt`);
+
+      return {
+        width: viewport.width,
+        height: viewport.height,
+        numPages: pdf.numPages
+      };
+    } catch (error) {
+      console.error("Error loading PDF:", error);
+    }
+  };
 
   const [file, setFile] = useState(null);
   const [text, setText] = useState("text");
+  const [pdfDims, setPdfDims] = useState(null);
   const [watermarkImg, setWatermarkImg] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [x, setX] = useState(0);
+  const [y, setY] = useState(0);
 
   const [settings, setSettings] = useState({
     color: '#808080',
@@ -23,6 +56,20 @@ export default function WatermarkTool() {
     position: 'center',
     flatten: false,
   });
+
+  useEffect(() => {
+
+
+    if (pdfDims) {
+
+      if (settings.position.includes('left')) setX(10);
+      else if (settings.position.includes('right')) setX(pdfDims.width - settings.scale * 65 * text.length - 10);
+      else setX((pdfDims.width / 2) - (settings.scale * 65 * text.length / 2));
+      if (settings.position.includes('top')) setY(pdfDims.height - settings.scale * 70 - 10);
+      else if (settings.position.includes('bottom')) setY(10);
+      else setY((pdfDims.height / 2) - (settings.scale * 70 / 2));
+    }
+  }, [file,settings,pdfDims])
 
   const positions = [
     'top-left', 'top-center', 'top-right',
@@ -53,6 +100,18 @@ export default function WatermarkTool() {
 
   }, [file]);
 
+  useEffect(() => {
+    if (!file) return;
+
+    const loadDims = async () => {
+      const dims = await getPdfDimensions(URL.createObjectURL(file));
+      setPdfDims(dims);
+    };
+
+    loadDims();
+  }, [file]);
+
+
 
   useEffect(() => { // regenerate watermark image whenever text or settings change
     createWatermarkImage(text, settings).then((result) => setWatermarkImg(result)); // create the data URL and store it
@@ -66,7 +125,7 @@ export default function WatermarkTool() {
 
     try {
       const buffer = await file.arrayBuffer(); // read input PDF as ArrayBuffer
-      const bytes = await processPdf(buffer, watermarkImg, settings); // embed watermark and get modified bytes
+      const bytes = await processPdf(buffer, watermarkImg, settings, text); // embed watermark and get modified bytes
       const blob = new Blob([bytes], { type: 'application/pdf' }); // create a blob from bytes
       const link = document.createElement('a'); // create a temporary anchor
       link.href = URL.createObjectURL(blob); // create object URL for the blob
@@ -266,7 +325,7 @@ export default function WatermarkTool() {
                 <span className="text-[10px] font-bold text-zinc-600 ml-3 uppercase tracking-tighter">Solid</span>
               </div>
 
-             
+
             </div>
 
             <div className="space-y-3">
@@ -314,7 +373,7 @@ export default function WatermarkTool() {
                   { label: 'Ag', value: 'Times-Roman', name: 'Serif' },
                   { label: 'Ag', value: 'Helvetica', name: 'Sans' },
                   { label: 'Ag', value: 'Courier', name: 'Mono' },
-                  { label: 'Ag', value: 'comic', name: 'comic' },
+                  { label: 'Ag', value: 'comic sans ms', name: 'comic' },
                 ].map((font) => (
                   <button
                     key={font.value}
@@ -329,7 +388,7 @@ export default function WatermarkTool() {
                       className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg shadow-sm ${settings.fontFamily === font.value ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'
                         }`}
                       style={{
-                        fontFamily: font.value === 'comic'?'comic sans ms': font.value === 'Times-Roman' || font.value === 'Times-BoldItalic' ? 'serif' :
+                        fontFamily: font.value === 'comic' ? 'comic sans ms' : font.value === 'Times-Roman' || font.value === 'Times-BoldItalic' ? 'serif' :
                           font.value === 'Courier' ? 'monospace' : 'sans-serif',
                         fontStyle: font.value.includes('Italic') ? 'italic' : 'normal',
                         fontWeight: font.value.includes('Bold') ? 'bold' : 'normal'
@@ -339,8 +398,8 @@ export default function WatermarkTool() {
                     </div>
 
                     <span className={`text-[13px] font-bold  tracking-tight ${settings.fontFamily === font.value ? 'text-blue-400' : 'text-zinc-500'}`}
-                    style={{
-                        fontFamily: font.value === 'comic'?'comic sans ms': font.value === 'Times-Roman' || font.value === 'Times-BoldItalic' ? 'serif' :
+                      style={{
+                        fontFamily: font.value === 'comic' ? 'comic sans ms' : font.value === 'Times-Roman' || font.value === 'Times-BoldItalic' ? 'serif' :
                           font.value === 'Courier' ? 'monospace' : 'sans-serif',
                         fontStyle: font.value.includes('Italic') ? 'italic' : 'normal',
                         fontWeight: font.value.includes('Bold') ? 'bold' : 'normal'
@@ -382,37 +441,43 @@ export default function WatermarkTool() {
         </button>
       </aside>
 
-      {/* PREVIEW */}
-      <main className="flex-1 bg-[#09090b] flex items-center justify-center p-10 overflow-auto bg-[radial-gradient(#1c1c1f_1px,transparent_1px)] [background-size:25px_25px]"> {/* preview area */}
-        {file ? ( // if a file is selected, show the preview */)
-          <div className="relative shadow-2xl bg-white flex items-center justify-center border border-zinc-800"> {/* paper-like container */}
-            {/* PDF Canvas renders the background */}
-            <canvas ref={canvasRef} className="block shadow-inner" />{/* canvas used for PDF page rendering */}
 
-            {/* Watermark Overlay Layer */}
+      <main className="flex-1 bg-[#09090b] flex items-center justify-center p-10 overflow-auto">
+        {file ? (
+          <div className={`relative shadow-2xl bg-white border-3 border-blue-800 overflow-hidden`} > {/* container for PDF preview with watermark overlay */}
 
-            <div className={`absolute inset-0 pointer-events-none flex p-8 ${settings.position.includes('top') ? 'items-start' :
+            <canvas ref={canvasRef} />
+
+            {/* Watermark Overlay Layer ${settings.position.includes('top') ? 'items-start' :
               settings.position.includes('bottom') ? 'items-end' : 'items-center'
               } ${settings.position.includes('left') ? 'justify-start' :
                 settings.position.includes('right') ? 'justify-end' : 'justify-center'
-              }`}>{/* overlay container positioned according to settings */}
-              {watermarkImg && ( // only render the img element if watermark image is ready
+              } */}
+
+              {watermarkImg && file && pdfDims && (
+            <div className={`absolute border border-3 border-red-400 pointer-events-none flex items-center`} style={{height: `${settings.scale * 70}px`, width: `${settings.scale*65*text.length}px`, left:`${x}px`, top:`${pdfDims.height - y - settings.scale * 70}px`, transform: `rotate(${-settings.rotation}deg)`}}>
                 <img
                   src={watermarkImg}
                   style={{
-                    width: `${settings.scale * 100}%`, // scale width based on settings
-                    transform: `rotate(${-settings.rotation}deg)`, // rotate according to settings (note sign)
-                    opacity: settings.opacity, // apply opacity
-                    transformOrigin: 'center center' // keep rotation origin centered
+                    width: `${settings.scale * 65 * text.length}px`,
+                    height: `${settings.scale * 70}px`,
+                    // Converting PDF Bottom-Left to CSS Top-Left:
+                    opacity: settings.opacity,
+                    
+                    pointerEvents: 'none',
+                    zIndex: 10,
                   }}
                 />
-              )}
             </div>
+              )}
+
           </div>
         ) : (
+
+          //input pdf upload area
           <div onClick={() => fileInputRef.current.click()} className="border-2 border-dashed border-zinc-800 p-20 rounded-3xl cursor-pointer hover:border-blue-500 transition-all text-zinc-500 text-center"> {/* placeholder upload area */}
-            <Upload size={48} className="mx-auto mb-4 text-zinc-700" /> {/* upload icon */}
-            <p>Click to upload PDF</p> {/* user hint */}
+            <Upload size={48} className="mx-auto mb-4 text-zinc-700" />
+            <p>Click to upload PDF</p>
           </div>
         )}
       </main>
@@ -422,4 +487,4 @@ export default function WatermarkTool() {
   );
 }
 
-//here (end of file) - leftover marker preserved
+//here 

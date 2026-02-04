@@ -1,28 +1,28 @@
 import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
 
-export const processPdf = async (pdfBuffer, watermarkUrl, settings) => {
+export const processPdf = async (pdfBuffer, watermarkUrl, settings, text) => {
 
   // Loading the PDF bytes into a PDFDocument instance
-  const pdfDoc = await PDFDocument.load(pdfBuffer); 
+  const pdfDoc = await PDFDocument.load(pdfBuffer);
 
   // Get an array of all pages in the document
   const pages = pdfDoc.getPages();
-  
+
   // embed the watermark PNG (data URL) into the PDF
-  const image = await pdfDoc.embedPng(watermarkUrl); 
+  const image = await pdfDoc.embedPng(watermarkUrl);
 
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  pages.forEach((page) => { 
+  pages.forEach((page) => {
 
     const { width: pageWidth, height: pageHeight } = page.getSize();
-    const scaleFactor = (pageWidth * settings.scale) / image.width;
-    const imgWidth = image.width * scaleFactor;
-    const imgHeight = image.height * scaleFactor;
-
-    const padding = 20; // keep watermark away from physical edge in PDF points
+    // const scaleFactor = (pageWidth * settings.scale) / image.width;
+    const imgWidth = settings.scale * 65 * text.length;
+    const imgHeight = settings.scale * 70;
+    const rotationRad = (settings.rotation * Math.PI) / 180;
+    const padding = 10; // keep watermark away from physical edge in PDF points
     let x, y; // declare x and y coordinates for image placement
-
+    let centerX, centerY;
 
     // it takes the distances relative to bottom-left corner.
     // Horizontal Position
@@ -35,11 +35,32 @@ export const processPdf = async (pdfBuffer, watermarkUrl, settings) => {
     else if (settings.position.includes('bottom')) y = padding; // align to bottom with padding
     else y = (pageHeight / 2) - (imgHeight / 2); // otherwise center vertically
 
+
+    // identify the rotation center
+    if (settings.position.includes('left')) {
+      centerX = padding + (imgWidth / 2);
+    } else if (settings.position.includes('right')) {
+      centerX = pageWidth - padding - (imgWidth / 2);
+    } else {
+      centerX = pageWidth / 2;
+    }
+
+    // Y-Axis logic
+    if (settings.position.includes('top')) {
+      centerY = pageHeight - padding - (imgHeight / 2);
+    } else if (settings.position.includes('bottom')) {
+      centerY = padding + (imgHeight / 2);
+    } else {
+      centerY = pageHeight / 2;
+    }
+
+
     // draw the embedded image onto the page
 
     page.drawImage(image, {
 
-      x, y, 
+      x: centerX - (imgWidth / 2) * Math.cos(rotationRad) + (imgHeight / 2) * Math.sin(rotationRad),
+      y: centerY - (imgWidth / 2) * Math.sin(rotationRad) - (imgHeight / 2) * Math.cos(rotationRad),
       width: imgWidth,
       height: imgHeight,
       rotate: degrees(settings.rotation),
@@ -51,7 +72,7 @@ export const processPdf = async (pdfBuffer, watermarkUrl, settings) => {
 
       // Function for ultra-short, disruptive junk
       const getTinyJunk = () => {
-        const chars = 'xo!$@.</z>!^%^z1mio#'; 
+        const chars = 'xo!$@.</z>!^%^z1mio#';
         return chars[Math.floor(Math.random() * chars.length)];
       };
 
@@ -68,7 +89,7 @@ export const processPdf = async (pdfBuffer, watermarkUrl, settings) => {
             size: 4 + Math.random() * 3, // Tiny, but big enough to be captured
             font: font,
             color: rgb(1, 1, 1),
-            opacity: 0.001, 
+            opacity: 0.001,
           });
         }
       }
