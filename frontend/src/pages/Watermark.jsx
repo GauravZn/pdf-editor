@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createWatermarkImage } from '../../utils/textToImage.js';
 import { processPdf } from '../../hooks/usePdfProcessor.js';
-import { Upload, Type, RotateCw, Ghost, Maximize, Shield, LayoutGrid, Palette } from 'lucide-react';
+import { Upload, Type, RotateCw, Ghost, Maximize, Shield, LayoutGrid,ArrowLeft, Palette } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist'; // import PDF.js library for client-side PDF rendering
 import GlobalWorker from 'pdfjs-dist/build/pdf.worker.mjs?url'; // Vite-specific PDF worker loader import
-
+import {useNavigate} from 'react-router-dom'
 pdfjsLib.GlobalWorkerOptions.workerSrc = GlobalWorker; // tell PDF.js where the worker script is located
 
 
 
 
 export default function WatermarkTool() {
-
 
   const getPdfDimensions = async (fileUrl) => {
     if (!fileUrl) return null;
@@ -38,7 +37,7 @@ export default function WatermarkTool() {
       console.error("Error loading PDF:", error);
     }
   };
-
+  
   const [file, setFile] = useState(null);
   const [text, setText] = useState("text");
   const [pdfDims, setPdfDims] = useState(null);
@@ -46,6 +45,7 @@ export default function WatermarkTool() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [x, setX] = useState(0);
   const [y, setY] = useState(0);
+  const navigate = useNavigate()
 
   const [settings, setSettings] = useState({
     color: '#808080',
@@ -69,7 +69,7 @@ export default function WatermarkTool() {
       else if (settings.position.includes('bottom')) setY(10);
       else setY((pdfDims.height / 2) - (settings.scale * 70 / 2));
     }
-  }, [file,settings,pdfDims])
+  }, [file, settings, pdfDims])
 
   const positions = [
     'top-left', 'top-center', 'top-right',
@@ -135,22 +135,58 @@ export default function WatermarkTool() {
     setIsProcessing(false);
   };
 
-  return ( // component JSX return
+  return (
+
     <div className="flex h-screen bg-[#09090b] text-zinc-100 font-sans overflow-hidden"> {/* top-level layout container */}
+
+
+
+
       {/* SIDEBAR */}
       <aside className="w-80 bg-[#121214] border-r border-zinc-800 p-6 flex flex-col space-y-6 shadow-2xl z-20 h-full">
-        <div className="p-6 pb-2">
-          <h1 className="text-xl font-bold tracking-tight">Watermark Editor</h1>
-        </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-4 space-y-8">
 
+{/* SIDEBAR HEADER: Button + Title */}
+<div className="flex items-center gap-4  pr-6">
+  <button
+    onClick={() => navigate('/dashboard', { replace: true })}
+    className="
+      group
+      flex items-center justify-center
+      w-10 h-10 
+      shrink-0
+      rounded-full 
+      bg-zinc-900 
+      border border-zinc-800 
+      text-zinc-400
+      transition-all duration-200 
+      hover:bg-zinc-800 hover:text-blue-400 hover:border-blue-500/50
+      focus:outline-none focus:ring-2 focus:ring-blue-500/40
+      active:scale-95
+      shadow-lg
+    "
+    title="Back to Dashboard"
+  >
+    <ArrowLeft size={20} className="transition-transform group-hover:-translate-x-0.5" />
+  </button>
 
-          <div className="space-y-4"> {/* group of control blocks */}
-            <div className="space-y-2"> {/* text input block */}
+  <h1 className="text-xl font-bold tracking-tight text-zinc-100 whitespace-nowrap">
+    Watermark Editor
+  </h1>
+</div>
+
+      <hr className='text-[#808080]' />
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+
+          {/* group of control blocks */}
+          <div className="space-y-4">
+
+            {/* text input block */}
+            <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2"><Type size={14} /> Text</label> {/* label with icon */}
               <input className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 outline-none focus:ring-1 focus:ring-blue-500" value={text} onChange={(e) => setText(e.target.value)} />
             </div>
 
+            {/* color input */}
             <div className="space-y-3">
               <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
                 <Palette size={14} /> Watermark Color
@@ -192,6 +228,7 @@ export default function WatermarkTool() {
               </div>
             </div>
 
+            {/* Rotate watermark */}
             <div className="space-y-4">
               <div className="flex justify-between items-end">
                 <div className="space-y-1">
@@ -247,6 +284,7 @@ export default function WatermarkTool() {
               )}
             </div>
 
+            {/* Resize Watermark */}
             <div className="space-y-4">
               <div className="flex justify-between items-end">
                 <div className="space-y-1">
@@ -298,6 +336,7 @@ export default function WatermarkTool() {
               </div>
             </div>
 
+            {/* Set Opacity */}
             <div className="space-y-4">
               <div className="flex justify-between items-end">
                 <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
@@ -328,6 +367,7 @@ export default function WatermarkTool() {
 
             </div>
 
+            {/* Select Position */}
             <div className="space-y-3">
               <div className="flex justify-between items-center px-1">
                 <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
@@ -358,6 +398,7 @@ export default function WatermarkTool() {
               </div>
             </div>
 
+            {/* Font Selction */}
             <div className="space-y-3">
               <div className="flex justify-between items-center px-1">
                 <label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
@@ -411,6 +452,7 @@ export default function WatermarkTool() {
               </div>
             </div>
 
+            {/* Flatten PDF */}
             <div className="space-y-4 pt-2 border-t border-zinc-800/50">
               <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${settings.flatten ? 'bg-blue-600/5 border-blue-500/50' : 'bg-zinc-900/30 border-zinc-800'
                 }`}>
@@ -435,27 +477,25 @@ export default function WatermarkTool() {
 
 
           </div>
+
         </div>
-        <button onClick={handleDownload} disabled={!file || isProcessing} className="w-full mt-auto bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold transition-all disabled:bg-zinc-800"> {/* download button */}
-          {isProcessing ? "Embedding..." : "Download PDF"} {/* show status text when processing */}
+
+        <button onClick={handleDownload} disabled={!file || isProcessing} className="w-full mt-auto bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold transition-all disabled:bg-zinc-800">
+          {isProcessing ? "Embedding..." : "Download PDF"}
         </button>
       </aside>
 
 
       <main className="flex-1 bg-[#09090b] flex items-center justify-center p-10 overflow-auto">
-        {file ? (
-          <div className={`relative shadow-2xl bg-white border-3 border-blue-800 overflow-hidden`} > {/* container for PDF preview with watermark overlay */}
 
+        {file ? (
+          <div className={`relative shadow-2xl bg-white border-3 border-blue-800 overflow-hidden`} >
+
+            {/* container for PDF preview with watermark overlay */}
             <canvas ref={canvasRef} />
 
-            {/* Watermark Overlay Layer ${settings.position.includes('top') ? 'items-start' :
-              settings.position.includes('bottom') ? 'items-end' : 'items-center'
-              } ${settings.position.includes('left') ? 'justify-start' :
-                settings.position.includes('right') ? 'justify-end' : 'justify-center'
-              } */}
-
-              {watermarkImg && file && pdfDims && (
-            <div className={`absolute border border-3 border-red-400 pointer-events-none flex items-center`} style={{height: `${settings.scale * 70}px`, width: `${settings.scale*65*text.length}px`, left:`${x}px`, top:`${pdfDims.height - y - settings.scale * 70}px`, transform: `rotate(${-settings.rotation}deg)`}}>
+            {watermarkImg && file && pdfDims && (
+              <div className={`absolute border border-3 border-red-400 pointer-events-none flex items-center`} style={{ height: `${settings.scale * 70}px`, width: `${settings.scale * 65 * text.length}px`, left: `${x}px`, top: `${pdfDims.height - y - settings.scale * 70}px`, transform: `rotate(${-settings.rotation}deg)` }}>
                 <img
                   src={watermarkImg}
                   style={{
@@ -463,19 +503,18 @@ export default function WatermarkTool() {
                     height: `${settings.scale * 70}px`,
                     // Converting PDF Bottom-Left to CSS Top-Left:
                     opacity: settings.opacity,
-                    
                     pointerEvents: 'none',
                     zIndex: 10,
                   }}
                 />
-            </div>
-              )}
+              </div>
+            )}
 
           </div>
         ) : (
 
           //input pdf upload area
-          <div onClick={() => fileInputRef.current.click()} className="border-2 border-dashed border-zinc-800 p-20 rounded-3xl cursor-pointer hover:border-blue-500 transition-all text-zinc-500 text-center"> {/* placeholder upload area */}
+          <div onClick={() => fileInputRef.current.click()} className="border-2 border-dashed border-zinc-800 p-20 rounded-3xl cursor-pointer hover:border-blue-500 transition-all text-zinc-500 text-center">
             <Upload size={48} className="mx-auto mb-4 text-zinc-700" />
             <p>Click to upload PDF</p>
           </div>
