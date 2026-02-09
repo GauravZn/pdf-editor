@@ -2,31 +2,44 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../db.js";
 import dotenv from "dotenv"
+import generateKeys from "../utils/generateKeyPair.util.js";
+
 dotenv.config()
 
 export const signup = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
 
-  if (!email || !password) {
+  if (!email || !password || !username) {
     return res.status(400).json({ message: "Missing fields" });
   }
 
   try {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const keyPair = await generateKeys();
 
     // Create user
+    // console.log('guwathi')
     const userResult = await pool.query(
-      "INSERT INTO users (email, password) VALUES ($1,$2) RETURNING id,email",
-      [email, hashedPassword]
+      "INSERT INTO users (email, password, public_key, username) VALUES ($1, $2, $3, $4) RETURNING id, email, public_key",
+      [email, hashedPassword, keyPair.publicKey, username]
     );
+
+
+
+
+    // Generate the public and private keys, and send them in the response.
 
     res.status(201).json({
       message: "Signup successful",
+      privateKey: keyPair.privateKey,
+      publicKey: keyPair.publicKey,
+      obj:keyPair.obj
     });
 
   } catch (err) {
     if (err.code === "23505") {
+      // console.log('here')
       return res.status(400).json({ message: "User already exists" });
     }
 
@@ -52,9 +65,9 @@ export const login = async (req, res) => {
 
   if (!match)
     return res.status(401).json({ message: "Invalid credentials" });
-  
-  const token = jwt.sign(
-    { id: user.id , email:user.email},
+
+  const token = (
+    { id: user.id, email: user.email, username: user.username },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );

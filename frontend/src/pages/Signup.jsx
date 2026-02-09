@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { Eye, EyeOff } from "lucide-react";
+import { useEffect } from "react";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -9,14 +10,22 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("")
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // 🔐 NEW STATES (NON-UI BREAKING)
-  const [privateKey, setPrivateKey] = useState(null);
-  const [copied, setCopied] = useState(false);
-
+  const [response, setResponse] = useState(null)
   const navigate = useNavigate();
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Private key is copied to clipboard!\nSave it in a safe folder.\nIt can't be generated again.");
+      navigate('/login')
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+    }
+  };
+
 
   const handleEmailBlur = () => {
     if (!email) return;
@@ -28,26 +37,24 @@ export default function Signup() {
   };
 
   const handleSignup = async () => {
-    if (!email || !password || emailError) return;
+    if (!email || !password || !username || emailError) return;
 
     try {
       setLoading(true);
-      const res = await api.post("/auth/signup", { email, password });
-
-      // 🔐 STORE PRIVATE KEY (NO ALERT)
-      setPrivateKey(res.data.privateKey);
+      const res = await api.post("/auth/signup", { email, password, username });
+      setResponse(res.data)
+      console.log("response received::::", res);
+      // const {publicKey, privateKey, obj} = res;
+      // navigate('/login')
     } catch (err) {
       alert(err.response?.data?.message || "Signup failed");
-    } finally {
-      setLoading(false);
+    } 
+    finally{
+      setLoading(false)
     }
   };
 
-  const copyPrivateKey = async () => {
-    await navigator.clipboard.writeText(privateKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-900 text-zinc-100 px-4">
@@ -118,6 +125,36 @@ export default function Signup() {
             )}
           </div>
 
+          {/* username */}
+          <div>
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              spellCheck={false}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
+              onChange={(e) => {
+                const value = e.target.value;
+                setUsername(value);
+              }}
+
+              className={`
+                w-full px-3 py-2 sm:py-2.5
+                rounded-md
+                bg-zinc-900 border
+                border-zinc-700
+                text-zinc-100 placeholder-zinc-400
+                focus:outline-none focus:ring-2
+                focus:ring-indigo-500
+                text-sm sm:text-base
+              `}
+            />
+
+
+          </div>
+
           {/* PASSWORD */}
           <div className="relative">
             <input
@@ -156,17 +193,32 @@ export default function Signup() {
 
           <button
             type="submit"
-            disabled={loading || !!emailError}
-            className="
+            disabled={loading || !!emailError || response}
+            className={`
               w-full py-2.5 rounded-md font-medium
-              bg-indigo-600 hover:bg-indigo-500
-              transition disabled:opacity-50
+              
+              transition 
               text-sm sm:text-base
-            "
+              ${response ? 'bg-green-600 opacity-100 opacity-100':'bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50'} 
+            `}
           >
-            {loading ? "Creating account..." : "Sign up"}
+            {loading ? "Creating account..." : response?'Account Created Successfully.\nCopy private key to proceed' : "Sign up"}
           </button>
         </form>
+
+
+        {response &&
+
+          <>
+
+            <button className="bg-blue-400 px-4 py-2 rounded-xl mt-4 cursor-pointer" onClick={() => copyToClipboard(response.privateKey)}>
+              Copy your private key
+            </button>
+
+          </>
+
+        }
+
 
         {/* BACK TO LOGIN */}
         <p className="text-xs sm:text-sm text-zinc-400 text-center mt-4">
@@ -180,49 +232,8 @@ export default function Signup() {
         </p>
       </div>
 
-      {/* 🔐 PRIVATE KEY MODAL (UI SAFE) */}
-      {privateKey && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 max-w-lg w-full shadow-xl">
 
-            <h3 className="text-red-400 font-semibold mb-2">
-              ⚠ Save your private key
-            </h3>
 
-            <p className="text-zinc-400 text-sm mb-3">
-              This key will be shown <b>only once</b>. Losing it means you
-              cannot sign PDFs.
-            </p>
-
-            <textarea
-              readOnly
-              value={privateKey}
-              className="
-                w-full h-40 p-3 text-xs
-                bg-zinc-950 border border-zinc-700
-                rounded-md text-zinc-100 font-mono
-                resize-none
-              "
-            />
-
-            <div className="flex justify-between items-center mt-4">
-              <button
-                onClick={copyPrivateKey}
-                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm"
-              >
-                {copied ? "✅ Copied" : "Copy private key"}
-              </button>
-
-              <button
-                onClick={() => navigate("/login")}
-                className="px-3 py-2 bg-green-600 hover:bg-green-500 rounded-md text-sm"
-              >
-                I have saved it
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

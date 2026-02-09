@@ -12,6 +12,10 @@ import ScannedToStandard from "./pages/ScannedToStandard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import ReceiptGenerator from "./pages/RecieptGenerator";
+import SignDocumentPage from "./pages/SignDocument";
+import AllSignersPage from "./pages/AllSignersPage";
+import RegistryPage from "./pages/RegistryPage";
+import SignatureHistoryPage from "./pages/SignatureHistoryPage";
 
 export default function App() {
   return (
@@ -48,6 +52,46 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/esign/sign"
+        element={
+          <ProtectedRoute>
+            <SignDocumentPage />
+          </ProtectedRoute>
+        }
+      >
+      </Route>
+
+      <Route
+        path="/esign/all-signers"
+        element={
+          <ProtectedRoute>
+            <AllSignersPage />
+          </ProtectedRoute>
+        }>
+      </Route>
+
+      <Route
+        path="/esign/registry"
+        element={
+          <ProtectedRoute>
+            <RegistryPage />
+          </ProtectedRoute>
+        }
+      >
+      </Route>
+
+      <Route
+        path="/esign/history"
+        element={
+          <ProtectedRoute>
+            <SignatureHistoryPage />
+          </ProtectedRoute>
+        }>
+
+
+      </Route>
 
       <Route
         path="/watermark"
@@ -93,12 +137,12 @@ export default function App() {
         }
       />
       <Route path="/scanned-to-standard" element={<ProtectedRoute>
-            <ScannedToStandard />
-          </ProtectedRoute>} />
+        <ScannedToStandard />
+      </ProtectedRoute>} />
 
       <Route path="/receipt-generator" element={<ProtectedRoute>
-            <ReceiptGenerator />
-          </ProtectedRoute>} />
+        <ReceiptGenerator />
+      </ProtectedRoute>} />
     </Routes>
   );
 }

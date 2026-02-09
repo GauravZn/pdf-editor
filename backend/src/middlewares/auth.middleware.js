@@ -5,7 +5,6 @@ export default function auth(req, res, next) {
 
     // Expect: Authorization: Bearer <token>
     const authHeader = req.headers.authorization;
-
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -19,13 +18,16 @@ export default function auth(req, res, next) {
     // Attach user info to request
     req.user = {
       id: decoded.id,
-      email: user.email
+      username: decoded.username,
+      email: decoded.email
     };
+    console.log('ship-sheep-keep-beep')
+
+    // console.log("onedirection",req.user)
 
     next();
   }
-  catch (err)
-  {
+  catch (err) {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 }

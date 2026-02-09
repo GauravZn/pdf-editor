@@ -7,9 +7,6 @@ import GlobalWorker from 'pdfjs-dist/build/pdf.worker.mjs?url'; // Vite-specific
 import {useNavigate} from 'react-router-dom'
 pdfjsLib.GlobalWorkerOptions.workerSrc = GlobalWorker; // tell PDF.js where the worker script is located
 
-
-
-
 export default function WatermarkTool() {
 
   const getPdfDimensions = async (fileUrl) => {
