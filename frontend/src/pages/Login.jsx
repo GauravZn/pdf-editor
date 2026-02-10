@@ -16,6 +16,7 @@ export default function Login() {
     try {
       setLoading(true);
       const res = await api.post("/auth/login", { email, password });
+      console.log('sir, did we get here,', res.data.token)
       localStorage.setItem("token", res.data.token);
       navigate("/dashboard");
     } catch {

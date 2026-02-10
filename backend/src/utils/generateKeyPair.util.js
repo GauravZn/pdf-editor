@@ -15,10 +15,7 @@ async function generateKeys() {
   const privateKey = await subtle.exportKey("jwk", keyPair.privateKey);
 
   const private_b64Key = Buffer.from(JSON.stringify(privateKey)).toString('base64url');
-  // console.log(private_b64Key);
   const public_b64Key = Buffer.from(JSON.stringify(publicKey)).toString('base64url');
-  // console.log(public_b64Key);
-
 
   return {
     "privateKey":private_b64Key,

@@ -19,14 +19,10 @@ export const signup = async (req, res) => {
     const keyPair = await generateKeys();
 
     // Create user
-    // console.log('guwathi')
     const userResult = await pool.query(
       "INSERT INTO users (email, password, public_key, username) VALUES ($1, $2, $3, $4) RETURNING id, email, public_key",
       [email, hashedPassword, keyPair.publicKey, username]
     );
-
-
-
 
     // Generate the public and private keys, and send them in the response.
 
@@ -39,7 +35,6 @@ export const signup = async (req, res) => {
 
   } catch (err) {
     if (err.code === "23505") {
-      // console.log('here')
       return res.status(400).json({ message: "User already exists" });
     }
 
@@ -56,9 +51,10 @@ export const login = async (req, res) => {
     "SELECT * FROM users WHERE email=$1",
     [email]
   );
-
+  
   if (result.rows.length === 0)
     return res.status(401).json({ message: "Invalid credentials" });
+  console.log('we definitely reached here')
 
   const user = result.rows[0];
   const match = await bcrypt.compare(password, user.password);
@@ -66,11 +62,12 @@ export const login = async (req, res) => {
   if (!match)
     return res.status(401).json({ message: "Invalid credentials" });
 
-  const token = (
+  const token = jwt.sign(
     { id: user.id, email: user.email, username: user.username },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
+
 
   res.json({ token });
 };

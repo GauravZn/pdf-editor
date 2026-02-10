@@ -10,7 +10,7 @@ export default function Dashboard() {
   useEffect(()=>{
 
     const getUser = async()=>{
-      console.log("BOSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
+      console.log("")
       const response = await api.get('/get-user')  ;
       setUser(response.data)
       console.log("exe",response.data)

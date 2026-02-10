@@ -28,7 +28,6 @@ const signHash = (req, res) => {
         });
     }
     catch (error) {
-        // console.error("Final Signing Error:", error);
         return res.status(500).send({
             error: "JWK Import Failed",
             details: error.message

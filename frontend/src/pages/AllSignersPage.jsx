@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, ArrowLeft, ShieldCheck, Cpu, Hash, Key, CheckCircle2, Loader2, User } from 'lucide-react';
+import { Upload, ArrowLeft, ShieldCheck, Cpu, Hash, Key, CheckCircle2, Loader2, User, FileDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from "../api/axios";
 
@@ -11,6 +11,43 @@ export default function SignDocumentPage() {
     const [allSigners, setAllSigners] = useState([])
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
+
+    const downloadSignatures = () => {
+        if (!allSigners || allSigners.length === 0) return;
+
+        // Format the header
+        let content = `Document: ${fileData.filename}\n`;
+        content += `Fingerprint: ${fileData.hash}\n`;
+        content += `Export Date: ${new Date().toLocaleString()}\n`;
+        content += `-------------------------------------------\n\n`;
+
+        // Map through signers and format each entry
+        allSigners.forEach((signer, index) => {
+            content += `Signer #${index + 1}\n`;
+            content += `Username: ${signer.signer_username}\n`;
+            content += `Email:    ${signer.signer_email}\n`;
+            content += `Date:     ${new Date(signer.timestamp).toLocaleString()}\n`;
+            content += `Signature: ${signer.signature}\n`;
+            content += `-------------------------------------------\n`;
+        });
+
+        // Create the file and trigger download
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        // Set filename: pdf_name_all_signatures.txt
+        const baseName = fileData.filename.replace(/\.[^/.]+$/, ""); // Removes .pdf extension
+        link.download = `${baseName}_all_signatures.txt`;
+
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
 
     const handleFileChange = async (e) => {
         const selectedFile = e.target.files[0];
@@ -131,6 +168,23 @@ export default function SignDocumentPage() {
                                             <User size={14} className="text-blue-500" />
                                             Verified Signers ({allSigners.length})
                                         </div>
+
+                                        {allSigners.length > 0 && (
+                                            <button
+                                                onClick={downloadSignatures}
+                                                className="relative group/btn flex items-center gap-2 px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/20 hover:border-blue-500/50 transition-all duration-300 active:scale-95 shadow-[0_0_15px_rgba(59,130,246,0.1)] hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+                                            >
+                                                {/* Subtle inner glow for a "glass" effect */}
+                                                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+
+                                                <FileDown size={14} className="relative z-10 group-hover/btn:-translate-y-0.5 transition-transform" />
+
+                                                <span className="relative z-10 text-[11px] font-bold tracking-tight">
+                                                    EXPORT LOG
+                                                </span>
+                                            </button>
+                                        )}
+
                                     </div>
 
                                     <div className="grid gap-3">
@@ -138,8 +192,9 @@ export default function SignDocumentPage() {
                                             allSigners.map((signerData, index) => (
                                                 <div
                                                     key={index}
-                                                    className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 p-4 rounded-2xl hover:border-zinc-700 transition-all group"
+                                                    className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 p-4 rounded-2xl hover:border-blue-500/30 transition-all group"
                                                 >
+                                                    {/* Left Side: User Info */}
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/20 group-hover:scale-110 transition-transform">
                                                             <User size={18} className="text-blue-400" />
@@ -148,25 +203,31 @@ export default function SignDocumentPage() {
                                                             <p className="text-zinc-200 font-bold group-hover:text-white transition-colors">
                                                                 {signerData.signer_username}
                                                             </p>
-                                                            <div className="flex items-center gap-2 text-[10px] text-zinc-500">
-                                                                <span className="font-medium text-zinc-400">{signerData.signer_email}</span>
-                                                                <span>•</span>
-                                                                <span>
-                                                                    {new Date(signerData.timestamp).toLocaleDateString(undefined, {
-                                                                        month: 'short',
-                                                                        day: 'numeric',
-                                                                        hour: '2-digit',
-                                                                        minute: '2-digit'
-                                                                    })}
-                                                                </span>
-                                                            </div>
+                                                            <span className="text-[11px] font-medium text-zinc-500">{signerData.signer_email}</span>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <div className="flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                                                            <ShieldCheck size={12} className="text-emerald-500" />
-                                                            <span className="text-[10px] font-bold text-emerald-500 uppercase">Verified</span>
+                                                    {/* Right Side: Signature & Timestamp */}
+                                                    <div className="flex flex-col items-end gap-2 max-w-[50%]">
+                                                        {/* Signature Badge */}
+                                                        <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-zinc-800 group-hover:border-blue-500/20 transition-all">
+                                                            <Key size={10} className="text-blue-500/70" />
+                                                            <code className="text-[10px] text-blue-400/90 font-mono truncate max-w-[150px]">
+                                                                {signerData.signature}
+                                                            </code>
+                                                        </div>
+
+                                                        {/* Timestamp Badge */}
+                                                        <div className="flex items-center gap-1.5 text-zinc-500">
+                                                            <ShieldCheck size={11} className="text-emerald-500/60" />
+                                                            <span className="text-[10px] font-medium uppercase tracking-tight">
+                                                                {new Date(signerData.timestamp).toLocaleDateString(undefined, {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit'
+                                                                })}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>
