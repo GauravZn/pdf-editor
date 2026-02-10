@@ -12,23 +12,53 @@ export default function SignDocumentPage() {
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
 
+
     const downloadSignatures = () => {
         if (!allSigners || allSigners.length === 0) return;
+
+        const exportDateObject = new Date(Date.now())
+        const formattedExportDate = exportDateObject.toLocaleDateString('en-GB', {
+            weekday: 'long',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        })
+        const formattedExportTime = exportDateObject.toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        })
 
         // Format the header
         let content = `Document: ${fileData.filename}\n`;
         content += `Fingerprint: ${fileData.hash}\n`;
-        content += `Export Date: ${new Date().toLocaleString()}\n`;
-        content += `-------------------------------------------\n\n`;
+        content += `Export Date: ${formattedExportDate}, ${formattedExportTime}\n`;
+        content += `\n-------------------------------------------------------------------------------------------------------------------------------------------\n`;
 
         // Map through signers and format each entry
         allSigners.forEach((signer, index) => {
+            // Create the specific date format: Day, DD/MM/YYYY
+            const dateObj = new Date(signer.timestamp);
+            const formattedDate = dateObj.toLocaleDateString('en-GB', {
+                weekday: 'long',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            const formattedTime = dateObj.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+
             content += `Signer #${index + 1}\n`;
-            content += `Username: ${signer.signer_username}\n`;
-            content += `Email:    ${signer.signer_email}\n`;
-            content += `Date:     ${new Date(signer.timestamp).toLocaleString()}\n`;
+            content += `Username:  ${signer.signer_username}\n`;
+            content += `Email:     ${signer.signer_email}\n`;
+            content += `Date:      ${formattedDate}, ${formattedTime}\n`;
             content += `Signature: ${signer.signature}\n`;
-            content += `-------------------------------------------\n`;
+            content += `-------------------------------------------------------------------------------------------------------------------------------------------\n`;
+
+
         });
 
         // Create the file and trigger download
