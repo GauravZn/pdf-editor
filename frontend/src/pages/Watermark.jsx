@@ -46,9 +46,9 @@ export default function WatermarkTool() {
 
   const [settings, setSettings] = useState({
     color: '#808080',
-    rotation: 45,
-    opacity: 0.4,
-    scale: 0.35,
+    rotation: 0,
+    opacity: 0.5,
+    scale: 0.8,
     fontFamily: 'Times-Roman',
     position: 'center',
     flatten: false,
@@ -492,7 +492,7 @@ export default function WatermarkTool() {
             <canvas ref={canvasRef} />
 
             {watermarkImg && file && pdfDims && (
-              <div className={`absolute border border-3 border-red-400 pointer-events-none flex items-center`} style={{ height: `${settings.scale * 70}px`, width: `${settings.scale * 65 * text.length}px`, left: `${x}px`, top: `${pdfDims.height - y - settings.scale * 70}px`, transform: `rotate(${-settings.rotation}deg)` }}>
+              <div className={`absolute pointer-events-none flex items-center`} style={{ height: `${settings.scale * 70}px`, width: `${settings.scale * 65 * text.length}px`, left: `${x}px`, top: `${pdfDims.height - y - settings.scale * 70}px`, transform: `rotate(${-settings.rotation}deg)` }}>
                 <img
                   src={watermarkImg}
                   style={{

@@ -13,12 +13,10 @@ export const createWatermarkImage = (text, settings) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // drawing the boundary here.
-    ctx.strokeStyle = settings.color || '#808080'; 
-    ctx.lineWidth = 5;
-
-
+    // ctx.strokeStyle = settings.color || '#808080'; 
+    // ctx.lineWidth = 5;
     // Draw rectangle at (0,0) with full width/height
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    // ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
     // Style settings from UI
     ctx.fillStyle = settings.color || '#808080'; // set text fill color from settings or fallback

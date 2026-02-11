@@ -46,7 +46,7 @@ export default function SignDashboard() {
       {/* Top Navigation Bar */}
       <div className="max-w-5xl w-full flex justify-start mb-8">
         <button
-          onClick={() => navigate(-1)} // Goes back to the previous page (e.g., Watermark Tool)
+          onClick={() => navigate(-1)} 
           className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all active:scale-95"
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
