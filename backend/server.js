@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./src/routes/auth.route.js";
 import uploadRoutes from "./src/routes/upload.route.js"
+import summarizeRoutes from "./src/routes/summarize.route.js"
 import jwt from "jsonwebtoken";
 import signRoutes from "./src/routes/sign.route.js"
 import auth from "./src/middlewares/auth.middleware.js";
@@ -33,6 +34,7 @@ app.get('/api/get-user',auth, (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use('/api/esign', signRoutes)
+app.use('/api/summarize', summarizeRoutes)
 
 // generateKeys().then((res)=>console.log(res))  
 

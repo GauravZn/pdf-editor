@@ -17,7 +17,6 @@ export const uploadPDF = async (req, res) => {
       [fileHash, path, filename]
     );
 
-
     res.status(200).json({
       message: 'Success',
       hash: fileHash,
