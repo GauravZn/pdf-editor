@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import {pool} from '../db.js';
 import { generateFileHash } from '../utils/hash.util.js';
 
 export const uploadPDF = async (req, res) => {

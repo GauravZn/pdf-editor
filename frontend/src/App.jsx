@@ -12,10 +12,9 @@ import ScannedToStandard from "./pages/ScannedToStandard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import ReceiptGenerator from "./pages/RecieptGenerator";
-import SignDocumentPage from "./pages/SignDocument";
-import AllSignersPage from "./pages/AllSignersPage";
-import RegistryPage from "./pages/RegistryPage";
-import SignatureHistoryPage from "./pages/SignatureHistoryPage";
+import SignPage from "./components/SignPage";
+import TrackPage from "./components/TrackPage";
+
 
 export default function App() {
   return (
@@ -53,45 +52,6 @@ export default function App() {
         }
       />
 
-      <Route
-        path="/esign/sign"
-        element={
-          <ProtectedRoute>
-            <SignDocumentPage />
-          </ProtectedRoute>
-        }
-      >
-      </Route>
-
-      <Route
-        path="/esign/all-signers"
-        element={
-          <ProtectedRoute>
-            <AllSignersPage />
-          </ProtectedRoute>
-        }>
-      </Route>
-
-      <Route
-        path="/esign/registry"
-        element={
-          <ProtectedRoute>
-            <RegistryPage />
-          </ProtectedRoute>
-        }
-      >
-      </Route>
-
-      <Route
-        path="/esign/history"
-        element={
-          <ProtectedRoute>
-            <SignatureHistoryPage />
-          </ProtectedRoute>
-        }>
-
-
-      </Route>
 
       <Route
         path="/watermark"
@@ -102,14 +62,34 @@ export default function App() {
         }
       />
 
+      <Route path="/sign/:workflowId/:signerId" element={
+
+        <ProtectedRoute>
+
+          <SignPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/track/:workflowId" element={
+
+        <ProtectedRoute>
+
+          <TrackPage />
+        </ProtectedRoute>
+
+      } />
+
+
       <Route
-        path="/esign"
+        path="/esign/"
         element={
           <ProtectedRoute>
             <Esign />
           </ProtectedRoute>
         }
       />
+
+
 
       <Route
         path="/translate"

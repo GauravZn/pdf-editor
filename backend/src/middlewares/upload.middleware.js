@@ -1,22 +1,19 @@
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs'
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+
+    const dir = 'uploads/';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    cb(null, dir);
   },
   filename: (req, file, cb) => {
-    // 1. Get the original name without the .pdf extension
-    const originalName = path.parse(file.originalname).name;
-
-    // 2. Get the extension (e.g., .pdf)
-    const ext = path.extname(file.originalname);
-
-    // 3. Combine: OriginalName-Timestamp.pdf
-    const humaneName = `${originalName}-${Date.now()}${ext}`;
-
-    cb(null, humaneName);
-  }
+        // Professional naming: timestamp-originalName
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
 });
 
 const fileFilter = (req, file, cb) => {

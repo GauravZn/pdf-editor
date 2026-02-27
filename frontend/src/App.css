@@ -40,3 +40,10 @@
 .read-the-docs {
   color: #888;
 }
+
+
+/* Ensure the parent has dimensions */
+.flow-wrapper {
+  height: 100vh;
+  width: 100%;
+}
