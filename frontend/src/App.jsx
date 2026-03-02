@@ -4,7 +4,6 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Watermark from "./pages/Watermark";
-import Esign from "./pages/RequestSignature";
 import Translate from "./pages/Translate";
 import Summarize from "./pages/Summarize";
 import Changefont from "./pages/Changefont";
@@ -13,7 +12,6 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import ReceiptGenerator from "./pages/RecieptGenerator";
 import SignPage from "./components/SignPage";
-import SignDocumentPage from "./pages/SignDocument";
 import EsignHub from "./pages/Esign";
 import RequestSignature from "./pages/RequestSignature"
 
@@ -69,7 +67,7 @@ export default function App() {
 
       {/* The Upload & Send Flow */}
       <Route path="/request-signature" element={<ProtectedRoute><RequestSignature /></ProtectedRoute>} />
-
+      <Route path="/sign/:workflowId/:signerId" element={<SignPage />} />
 
       <Route
         path="/translate"

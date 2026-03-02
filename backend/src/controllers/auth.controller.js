@@ -26,7 +26,7 @@ export const signup = async (req, res) => {
   }
 
   try {
-    // 1. Verify CAPTCHA with Google
+    //  Verify CAPTCHA with Google
     const captchaVerifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${captchaToken}`;
     const captchaRes = await fetch(captchaVerifyUrl, { method: "POST" });
     const captchaData = await captchaRes.json();
@@ -35,16 +35,16 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "CAPTCHA validation failed. Are you a bot?" });
     }
 
-    // 2. Cryptography Prep
+    //  Cryptography Preparation
     const hashedPassword = await bcrypt.hash(password, 10);
     const keyPair = await generateKeys();
     const encryptedPrivateKey = encryptPrivateKey(keyPair.privateKey, password);
 
-    // 3. Generate Email Verification Token & Expiration (24 hours)
+    // Generate Email Verification Token & Expiration (24 hours)
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); 
 
-    // 4. Create user in Postgres
+    // Create user in Postgres
     const userResult = await pool.query(
       `INSERT INTO users 
         (email, password, public_key, encrypted_private_key, username, verification_token, verification_expires_at, accepted_terms, is_verified) 
@@ -53,7 +53,7 @@ export const signup = async (req, res) => {
       [email, hashedPassword, keyPair.publicKey, encryptedPrivateKey, username, verificationToken, expiresAt, termsAccepted]
     );
 
-    // 5. Send the Verification Email
+    // Send the Verification Email
     const verifyLink = `http://localhost:5000/api/auth/verify?token=${verificationToken}`;
     await transporter.sendMail({
       from: `"PDF Editor Admin" <${process.env.EMAIL_USER}>`,
@@ -80,7 +80,7 @@ export const signup = async (req, res) => {
   }
 };
 
-// NEW: Verification Route Logic
+//  Verification Route Logic
 export const verifyEmail = async (req, res) => {
   const { token } = req.query;
 
@@ -121,7 +121,7 @@ export const login = async (req, res) => {
 
   const user = result.rows[0];
 
-  // NEW: Block login if they haven't clicked the email link
+  // Block login if they haven't clicked the email link
   if (!user.is_verified) {
     return res.status(403).json({ message: "Please check your email and verify your account before logging in." });
   }
