@@ -23,7 +23,7 @@ const calculatePreviewFontSize = (text, isSig) => {
   return charCount > 15 ? '10px' : '12px';
 };
 
-// 🔥 PRO MOVE: Canvas now dynamically matches the EXACT aspect ratio of the drop-zone
+// Canvas now dynamically matches the EXACT aspect ratio of the drop-zone
 const generateFinalSignatureImage = async (config, tabMode, field) => {
   await document.fonts.ready;
   const canvas = document.createElement('canvas');
@@ -89,7 +89,6 @@ const generateFinalSignatureImage = async (config, tabMode, field) => {
   return canvas.toDataURL('image/png');
 };
 
-
 const SignPage = () => {
   const { workflowId, signerId } = useParams();
 
@@ -106,6 +105,7 @@ const SignPage = () => {
   const [textValues, setTextValues] = useState({});
 
   const currentSigner = workflowData.workflow?.signers?.find(s => s._id === signerId);
+  
   const groupedSteps = useMemo(() => {
     if (!workflowData.workflow?.signers) return [];
     const groups = workflowData.workflow.signers.reduce((acc, s) => {
@@ -125,31 +125,18 @@ const SignPage = () => {
           axios.get(`${API_BASE}/esign/view-pdf/${workflowId}`, { responseType: 'blob' })
         ]);
         setWorkflowData(prev => ({ ...prev, workflow: metaRes.data, pdfBlob: URL.createObjectURL(pdfRes.data) }));
-        setStatus('idle');
-      } catch (error) {
-        setStatus('error');
-      }
-    };
-    fetchWorkflowData();
-  }, [workflowId]);
 
-
-
-  useEffect(() => {
-    if (!workflowId) return;
-    const fetchWorkflowData = async () => {
-      try {
-        const [metaRes, pdfRes] = await Promise.all([
-          axios.get(`${API_BASE}/esign/workflow/${workflowId}`),
-          axios.get(`${API_BASE}/esign/view-pdf/${workflowId}`, { responseType: 'blob' })
-        ]);
-        setWorkflowData(prev => ({ ...prev, workflow: metaRes.data, pdfBlob: URL.createObjectURL(pdfRes.data) }));
-
-        // NEW: Check if this specific signer is already registered
+        // Check if this specific signer is already registered
         const currentSignerData = metaRes.data.signers.find(s => s._id === signerId);
         if (currentSignerData?.email) {
           const userCheck = await axios.get(`${API_BASE}/auth/check-user?email=${currentSignerData.email}`);
           setIsExistingUser(userCheck.data.exists);
+          
+          // Redirect unregistered users to the signup page
+          if (!userCheck.data.exists) {
+            alert("You need to register an account to sign this document.");
+            window.location.href = `/signup?email=${encodeURIComponent(currentSignerData.email)}`;
+          }
         }
 
         setStatus('idle');
@@ -199,7 +186,6 @@ const SignPage = () => {
 
     setStatus('loading');
 
-    // 🔥 FIX: Generate a custom image mapped perfectly to EACH field's dimensions using Promise.all
     const fieldsData = await Promise.all(currentSigner.fields.map(async f => {
       if (['signature', 'type', 'upload'].includes(f.type)) {
         const finalSignaturePayload = await generateFinalSignatureImage(signatureConfig, tab, f);
@@ -220,7 +206,8 @@ const SignPage = () => {
       setWorkflowData(prev => ({ ...prev, workflow: metaRes.data }));
       setStatus('success');
     } catch (error) {
-      setStatus('error');
+      alert(error.response?.data?.message || "Invalid password. Failed to sign document.");
+      setStatus('idle');
     }
   };
 
@@ -301,40 +288,28 @@ const SignPage = () => {
 
   return (
     <>
-
-      {/* THE SECURITY GATE */}
+      {/* THE SECURITY GATE (Only shows for existing users since guests get redirected) */}
       {
-        securityGate && status !== 'loading' && isExistingUser !== null && (
+        securityGate && status !== 'loading' && isExistingUser === true && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 backdrop-blur-md p-4">
             <div className="bg-white max-w-md w-full rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95">
               <ShieldCheck size={48} className="text-indigo-500 mb-4" />
               <h2 className="text-2xl font-black text-slate-900 mb-2">Secure Document</h2>
 
-              {isExistingUser ? (
-                <p className="text-slate-500 text-sm mb-6">Welcome back! Please enter your account password to unlock your cryptographic key and view this document.</p>
-              ) : (
-                <p className="text-slate-500 text-sm mb-6">You have been requested to sign. Create a password to secure your cryptographic key and access this document.</p>
-              )}
+              <p className="text-slate-500 text-sm mb-6">Welcome back! Please enter your account password to unlock your cryptographic key and view this document.</p>
 
               <div className="w-full space-y-4">
                 <input
                   type="password"
-                  placeholder={isExistingUser ? "Enter your password..." : "Create a secure password..."}
+                  placeholder="Enter your password..."
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
                   className="w-full p-4 border-2 border-slate-200 rounded-xl text-center outline-none focus:border-indigo-500"
                 />
 
-                {!isExistingUser && (
-                  <div className="flex items-start gap-2 text-left bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <input type="checkbox" id="terms" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-1" />
-                    <label htmlFor="terms" className="text-[10px] text-slate-500 font-medium">I accept the Terms and Conditions and understand my password will encrypt my legal electronic signature key.</label>
-                  </div>
-                )}
-
                 <button
                   onClick={() => setSecurityGate(false)}
-                  disabled={!authPassword || (!isExistingUser && !termsAccepted)}
+                  disabled={!authPassword}
                   className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-lg"
                 >
                   Unlock Document

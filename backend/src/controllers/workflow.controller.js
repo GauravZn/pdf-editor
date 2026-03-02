@@ -48,7 +48,8 @@ export const saveWorkflow = async (req, res) => {
             title,
             pdfPath: file.path,
             pdfHash,
-            signers
+            signers,
+            senderId: req.user.id
         });
 
         await newFlow.save();
@@ -122,7 +123,7 @@ export const renderDocument = async (req, res) => {
 
         if (!flow) return res.status(404).send("Document not found");
 
-        const pdfBuffer = await generateSignedPdfBuffer(flow.pdfPath, flow.signers,flow._id);
+        const pdfBuffer = await generateSignedPdfBuffer(flow.pdfPath, flow.signers, flow._id);
 
         res.contentType("application/pdf");
         res.send(Buffer.from(pdfBuffer));
@@ -161,7 +162,7 @@ export const viewPdf = async (req, res) => {
         const filePath = path.resolve(workflow.pdfPath);
 
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Access-Control-Allow-Origin', '*'); 
+        res.setHeader('Access-Control-Allow-Origin', '*');
         res.sendFile(filePath);
 
         console.log('PDF Streamed successfully for:', workflow.title);
@@ -174,7 +175,7 @@ export const viewPdf = async (req, res) => {
 
 export const sealDocument = async (req, res) => {
     const { workflowId, signerId, fieldsData, password, termsAccepted } = req.body;
-    
+
     try {
         const workflow = await Workflow.findById(workflowId);
         const signer = workflow.signers.id(signerId);
@@ -184,37 +185,25 @@ export const sealDocument = async (req, res) => {
         let decryptedBase64Key;
         let userId;
 
+
         // --- 1. IDENTITY & CRYPTOGRAPHY ---
         const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
 
         if (userCheck.rows.length === 0) {
-            // GUEST USER: Register them on the fly
-            if (!termsAccepted) return res.status(400).json({ message: "You must accept the Terms." });
-            
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const keyPair = await generateKeys();
-            const encryptedPrivateKey = encryptPrivateKey(keyPair.privateKey, password);
+            return res.status(404).json({ message: "User not registered. Please sign up first." });
+        }
 
-            const newUser = await pool.query(
-                `INSERT INTO users (email, password, public_key, encrypted_private_key, username, accepted_terms, is_verified)
-                 VALUES ($1, $2, $3, $4, $5, true, true) RETURNING id`,
-                [email, hashedPassword, keyPair.publicKey, encryptedPrivateKey, signer.name || 'Guest']
-            );
-            userId = newUser.rows[0].id;
-            decryptedBase64Key = keyPair.privateKey; // We already have it in memory
-        } else {
-            // EXISTING USER: Verify password and unlock key
-            const user = userCheck.rows[0];
-            userId = user.id;
-            
-            const match = await bcrypt.compare(password, user.password);
-            if (!match) return res.status(401).json({ message: "Invalid password." });
+        const user = userCheck.rows[0];
+        userId = user.id;
 
-            try {
-                decryptedBase64Key = decryptPrivateKey(user.encrypted_private_key, password);
-            } catch (e) {
-                return res.status(401).json({ message: "Failed to unlock signature key." });
-            }
+        // Strict password check! Fake passwords will fail right here.
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) return res.status(401).json({ message: "Invalid password." });
+
+        try {
+            decryptedBase64Key = decryptPrivateKey(user.encrypted_private_key, password);
+        } catch (e) {
+            return res.status(401).json({ message: "Failed to unlock signature key." });
         }
 
         // --- 2. SAVE VISUALS TO MONGODB ---
@@ -254,5 +243,15 @@ export const sealDocument = async (req, res) => {
     } catch (error) {
         console.error("Seal Error:", error);
         res.status(500).json({ message: "Fatal error sealing document." });
+    }
+};
+
+
+export const getMyWorkflows = async (req, res) => {
+    try {
+        const flows = await Workflow.find({ senderId: req.user.id }).sort({ createdAt: -1 });
+        res.json(flows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 };

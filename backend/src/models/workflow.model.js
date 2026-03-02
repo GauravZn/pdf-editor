@@ -33,6 +33,7 @@ const workflowSchema = new mongoose.Schema({
     pdfHash: { type: String, required: true, index: true }, 
     pdfPath: { type: String, required: true },
     signers: [signerSchema], 
+    senderId: { type: Number, required: true }, // <-- ADD THIS
     createdAt: { type: Date, default: Date.now }
 });
 

@@ -4,7 +4,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Watermark from "./pages/Watermark";
-import Esign from "./pages/Esign";
+import Esign from "./pages/RequestSignature";
 import Translate from "./pages/Translate";
 import Summarize from "./pages/Summarize";
 import Changefont from "./pages/Changefont";
@@ -13,9 +13,9 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import ReceiptGenerator from "./pages/RecieptGenerator";
 import SignPage from "./components/SignPage";
-import TrackPage from "./components/TrackPage";
 import SignDocumentPage from "./pages/SignDocument";
-
+import EsignHub from "./pages/Esign";
+import RequestSignature from "./pages/RequestSignature"
 
 export default function App() {
   return (
@@ -63,29 +63,12 @@ export default function App() {
         }
       />
 
-      <Route path="/sign/:workflowId/:signerId" element={
+      {/* The Master E-Sign Hub (Replaces the old track page and e-sign page) */}
+      <Route path="/esign" element={<ProtectedRoute><EsignHub /></ProtectedRoute>} />
+      <Route path="/esign/:workflowId" element={<ProtectedRoute><EsignHub /></ProtectedRoute>} />
 
-        <SignPage />
-      } />
-
-      <Route path="/track/:workflowId" element={
-
-        <ProtectedRoute>
-
-          <TrackPage />
-        </ProtectedRoute>
-
-      } />
-
-
-      <Route
-        path="/esign/"
-        element={
-          <ProtectedRoute>
-            <Esign />
-          </ProtectedRoute>
-        }
-      />
+      {/* The Upload & Send Flow */}
+      <Route path="/request-signature" element={<ProtectedRoute><RequestSignature /></ProtectedRoute>} />
 
 
       <Route

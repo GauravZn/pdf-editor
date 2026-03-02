@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { Eye, EyeOff, X, Printer } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha"; // <-- Import Recaptcha
+import { useSearchParams } from "react-router-dom";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -14,6 +15,7 @@ export default function Signup() {
   const [termsAccepted, setTermsAccepted] = useState(false); // <-- T&C State
   const [captchaToken, setCaptchaToken] = useState(null);    // <-- CAPTCHA State
 
+  const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState(null);
