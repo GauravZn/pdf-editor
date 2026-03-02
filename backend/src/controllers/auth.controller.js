@@ -10,14 +10,17 @@ import transporter from "../config/mailer.js"; // Import your mailer
 dotenv.config();
 
 export const signup = async (req, res) => {
-  const { email, password, username, termsAccepted, captchaToken } = req.body;
+  const { email, password, username, captchaToken, termsAccepted } = req.body;
 
   if (!email || !password || !username) {
     return res.status(400).json({ message: "Missing fields" });
   }
-  if (!termsAccepted) {
-    return res.status(400).json({ message: "You must accept the Terms and Conditions." });
-  }
+
+  if(!termsAccepted)
+    {
+      return res.status(400).json({message:"You must accept the Terms and conditions."})
+    }
+
   if (!captchaToken) {
     return res.status(400).json({ message: "Please complete the CAPTCHA verification." });
   }
@@ -46,7 +49,7 @@ export const signup = async (req, res) => {
       `INSERT INTO users 
         (email, password, public_key, encrypted_private_key, username, verification_token, verification_expires_at, accepted_terms, is_verified) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false) 
-       RETURNING id, email`,
+       RETURNING id, email, public_key`,
       [email, hashedPassword, keyPair.publicKey, encryptedPrivateKey, username, verificationToken, expiresAt, termsAccepted]
     );
 
@@ -65,8 +68,9 @@ export const signup = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "Signup successful. Please check your email to verify your account!",
-      privateKey: keyPair.privateKey, // Keeping this here as you had it returning to the UI to copy
+
+      message: "Signup successful",
+      publicKey: keyPair.publicKey,
     });
 
   } catch (err) {
@@ -132,4 +136,14 @@ export const login = async (req, res) => {
   );
 
   res.json({ token });
+};
+
+export const checkUserExists = async (req, res) => {
+  try {
+    const { email } = req.query;
+    const result = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+    res.json({ exists: result.rows.length > 0 });
+  } catch (err) {
+    res.status(500).json({ exists: false });
+  }
 };

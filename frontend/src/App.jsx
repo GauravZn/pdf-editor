@@ -14,6 +14,7 @@ import PublicRoute from "./routes/PublicRoute";
 import ReceiptGenerator from "./pages/RecieptGenerator";
 import SignPage from "./components/SignPage";
 import TrackPage from "./components/TrackPage";
+import SignDocumentPage from "./pages/SignDocument";
 
 
 export default function App() {
@@ -64,10 +65,7 @@ export default function App() {
 
       <Route path="/sign/:workflowId/:signerId" element={
 
-        <ProtectedRoute>
-
-          <SignPage />
-        </ProtectedRoute>
+        <SignPage />
       } />
 
       <Route path="/track/:workflowId" element={
@@ -88,7 +86,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
 
 
       <Route

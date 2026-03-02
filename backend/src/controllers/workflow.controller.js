@@ -3,7 +3,12 @@ import { notifyNextAvailableSigners } from "../services/email.service.js";
 import crypto from 'crypto';
 import path from "path";
 import fs from 'fs';
+import bcrypt from "bcrypt"
+import { pool } from "../db.js";
+import { encryptPrivateKey, decryptPrivateKey } from "../utils/crypto.util.js";
+import generateKeys from "../utils/generateKeyPair.util.js";
 import { generateSignedPdfBuffer } from '../utils/pdf.util.js';
+import { signDocument } from "../utils/sign.util.js";
 
 export const streamUpdatedPdf = async (req, res) => {
     try {
@@ -163,5 +168,91 @@ export const viewPdf = async (req, res) => {
     } catch (error) {
         console.error("View PDF Error:", error);
         res.status(500).json({ message: "Could not stream PDF" });
+    }
+};
+
+
+export const sealDocument = async (req, res) => {
+    const { workflowId, signerId, fieldsData, password, termsAccepted } = req.body;
+    
+    try {
+        const workflow = await Workflow.findById(workflowId);
+        const signer = workflow.signers.id(signerId);
+        if (!signer) return res.status(404).json({ message: "Signer not found" });
+
+        const email = signer.email;
+        let decryptedBase64Key;
+        let userId;
+
+        // --- 1. IDENTITY & CRYPTOGRAPHY ---
+        const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+
+        if (userCheck.rows.length === 0) {
+            // GUEST USER: Register them on the fly
+            if (!termsAccepted) return res.status(400).json({ message: "You must accept the Terms." });
+            
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const keyPair = await generateKeys();
+            const encryptedPrivateKey = encryptPrivateKey(keyPair.privateKey, password);
+
+            const newUser = await pool.query(
+                `INSERT INTO users (email, password, public_key, encrypted_private_key, username, accepted_terms, is_verified)
+                 VALUES ($1, $2, $3, $4, $5, true, true) RETURNING id`,
+                [email, hashedPassword, keyPair.publicKey, encryptedPrivateKey, signer.name || 'Guest']
+            );
+            userId = newUser.rows[0].id;
+            decryptedBase64Key = keyPair.privateKey; // We already have it in memory
+        } else {
+            // EXISTING USER: Verify password and unlock key
+            const user = userCheck.rows[0];
+            userId = user.id;
+            
+            const match = await bcrypt.compare(password, user.password);
+            if (!match) return res.status(401).json({ message: "Invalid password." });
+
+            try {
+                decryptedBase64Key = decryptPrivateKey(user.encrypted_private_key, password);
+            } catch (e) {
+                return res.status(401).json({ message: "Failed to unlock signature key." });
+            }
+        }
+
+        // --- 2. SAVE VISUALS TO MONGODB ---
+        if (fieldsData && fieldsData.length > 0) {
+            fieldsData.forEach(data => {
+                const field = signer.fields.find(f => f.id === data.fieldId);
+                if (field) {
+                    field.value = data.value; field.color = data.color;
+                    field.font = data.font; if (data.type) field.type = data.type;
+                }
+            });
+        }
+        signer.status = 'completed';
+        signer.signedAt = new Date();
+        workflow.markModified('signers');
+        await workflow.save();
+
+        // --- 3. CRYPTOGRAPHIC SEAL TO POSTGRES ---
+        const pdfBuffer = await generateSignedPdfBuffer(workflow.pdfPath, workflow.signers, workflow._id);
+        const signatureBase64 = await signDocument(decryptedBase64Key, pdfBuffer);
+        const documentHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+
+        await pool.query(
+            "INSERT INTO signatures (user_id, document_hash, signature_value) VALUES ($1, $2, $3)",
+            [userId, documentHash, signatureBase64]
+        );
+
+        // --- 4. TRIGGER NEXT EMAILS ---
+        const currentStep = signer.seq;
+        const othersInStep = workflow.signers.filter(s => s.seq === currentStep && s.status !== 'completed');
+        if (othersInStep.length === 0) {
+            await notifyNextAvailableSigners(workflowId, currentStep);
+        }
+
+        res.status(200).json({ message: "Document cryptographically sealed!" });
+
+    } catch (error) {
+        console.error("Seal Error:", error);
+        res.status(500).json({ message: "Fatal error sealing document." });
     }
 };

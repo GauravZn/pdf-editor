@@ -1,6 +1,6 @@
 import express from 'express';
 import  upload  from '../middlewares/upload.middleware.js';
-import { saveWorkflow, signStep, streamUpdatedPdf,renderDocument, viewPdf, getWorkflowMeta } from '../controllers/workflow.controller.js';
+import { saveWorkflow, signStep, streamUpdatedPdf,renderDocument, viewPdf, getWorkflowMeta, sealDocument } from '../controllers/workflow.controller.js';
 import { signPdf } from '../controllers/signature.controller.js';
 import verifyToken from '../middlewares/auth.middleware.js';
 
@@ -12,5 +12,6 @@ router.post("/sign", verifyToken, upload.single("document"), signPdf);
 router.get('/workflow/:workflowId', getWorkflowMeta);
 router.get('/view-pdf/:workflowId', viewPdf);
 router.get('/render-document/:workflowId', renderDocument);
+router.post('/seal', sealDocument)
 
 export default router;

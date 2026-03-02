@@ -52,3 +52,40 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #3f3f46; /* zinc-700 */
 }
+
+
+
+/* --- PRINT STYLES FOR LEGAL DOCUMENTS --- */
+@media print {
+  /* Hide absolutely everything by default */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Make the background white and text black for the printer */
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  /* Only show the element with the 'print-section' class and its children */
+  .print-section, .print-section * {
+    visibility: visible;
+    color: black !important; /* Force black text */
+  }
+
+  /* Position the text at the top left of the physical paper */
+  .print-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide the empty space buffer used for scrolling */
+  .print-section div[class*="h-[30vh]"] {
+    display: none !important;
+  }
+}

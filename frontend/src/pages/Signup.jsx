@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, X, Printer } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha"; // <-- Import Recaptcha
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -13,11 +13,31 @@ export default function Signup() {
   const [username, setUsername] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false); // <-- T&C State
   const [captchaToken, setCaptchaToken] = useState(null);    // <-- CAPTCHA State
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const navigate = useNavigate();
+
+  const handleTermsScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    // If the distance from top + container height is >= total scrollable height (with a 10px buffer)
+    if (scrollTop + clientHeight >= scrollHeight - 10) {
+      setHasScrolledToBottom(true);
+    }
+  };
+
+  const acceptTermsFromModal = () => {
+    setTermsAccepted(true);
+    setShowTermsModal(false);
+  };
+
+  const printTerms = () => {
+    // A simple trigger for the browser's print dialog
+    window.print();
+  };
 
   const copyToClipboard = async (text) => {
     try {
@@ -45,12 +65,12 @@ export default function Signup() {
     try {
       setLoading(true);
       // Send the new data to the backend
-      const res = await api.post("/auth/signup", { 
-        email, 
-        password, 
-        username, 
-        termsAccepted, 
-        captchaToken 
+      const res = await api.post("/auth/signup", {
+        email,
+        password,
+        username,
+        captchaToken,
+        termsAccepted
       });
       setResponse(res.data);
     } catch (err) {
@@ -71,7 +91,7 @@ export default function Signup() {
         <h2 className="text-xl sm:text-2xl font-semibold text-center mb-5 sm:mb-6">Create account</h2>
 
         <form onSubmit={(e) => { e.preventDefault(); handleSignup(); }} className="space-y-4">
-          
+
           {/* Email & Username inputs remain exactly the same as your code... */}
           <div>
             <input type="email" placeholder="Email" value={email} onChange={(e) => { setEmail(e.target.value); if (emailRegex.test(e.target.value)) setEmailError(""); }} onBlur={handleEmailBlur} className={`w-full px-3 py-2 rounded-md bg-zinc-900 border ${emailError ? "border-red-500" : "border-zinc-700"} text-zinc-100 outline-none focus:ring-2`} />
@@ -90,23 +110,31 @@ export default function Signup() {
           </div>
 
           {/* NEW: Terms & Conditions Checkbox */}
+          {/* UPDATED: Terms & Conditions Checkbox */}
           <div className="flex items-start gap-2 mt-2">
-            <input 
-              type="checkbox" 
-              id="terms" 
+            <input
+              type="checkbox"
+              id="terms"
               checked={termsAccepted}
               onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="mt-1 bg-zinc-900 border-zinc-700 rounded cursor-pointer" 
+              className="mt-1 bg-zinc-900 border-zinc-700 rounded cursor-pointer"
             />
-            <label htmlFor="terms" className="text-sm text-zinc-400 cursor-pointer">
-              I have read and agree to the <span className="text-indigo-400 hover:underline">Terms and Conditions</span>.
+            <label htmlFor="terms" className="text-sm text-zinc-400">
+              I have read and agree to the{" "}
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="text-indigo-400 hover:underline font-bold focus:outline-none"
+              >
+                Terms and Conditions
+              </button>.
             </label>
           </div>
 
           {/* NEW: Google reCAPTCHA Widget */}
-          <div className="flex justify-center mt-2">
+          <div className="flex justify-center mt-4 mb-4">
             <ReCAPTCHA
-              sitekey="6Lf5q3ksAAAAAPTbu_3uQ4Z0Vu6OlycGtpjk-M2y"
+              sitekey="6Lc9yXwsAAAAAKrsGlG7LWTRYBg0vBvGQwXenNrO"
               onChange={(token) => setCaptchaToken(token)}
               theme="dark" // Matches your zinc-900 theme!
             />
@@ -121,16 +149,98 @@ export default function Signup() {
           </button>
         </form>
 
-        {response && (
-          <button className="w-full bg-blue-400 text-zinc-900 font-bold px-4 py-2 rounded-xl mt-4 cursor-pointer hover:bg-blue-300 transition" onClick={() => copyToClipboard(response.privateKey)}>
-            Copy your private key
-          </button>
-        )}
-
         <p className="text-xs sm:text-sm text-zinc-400 text-center mt-4">
           Already have an account? <span onClick={() => navigate("/login")} className="text-indigo-400 cursor-pointer hover:underline">Log in</span>
         </p>
       </div>
+
+
+      {/* NEW: Interactive Terms & Conditions Modal */}
+      {showTermsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl flex flex-col max-h-[85vh]">
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+              <h3 className="text-xl font-bold text-zinc-100">Terms and Conditions</h3>
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="text-zinc-400 hover:text-zinc-100 transition"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Body (Scrollable) */}
+            {/* Modal Body (Scrollable) */}
+            <div
+              className="flex-1 overflow-y-auto p-6 space-y-4 text-sm text-zinc-300 pretty-scrollbar print-section"
+              onScroll={handleTermsScroll}
+            >
+              <h2 className="text-2xl font-black text-zinc-100 mb-6">Electronic Signature Agreement & Terms</h2>
+              <p><strong>Last Updated: {new Date().toLocaleDateString()}</strong></p>
+              <p>By accessing or using our application, you agree to be bound by these Terms and Conditions. This document constitutes a legally binding agreement regarding your use of electronic signatures and electronic records.</p>
+
+              <h4 className="font-bold text-zinc-100 mt-6 border-b border-zinc-700 pb-2">1. Global E-Signature Compliance</h4>
+              <p>This platform facilitates the execution of documents using electronic signatures. Our cryptographic architecture is designed to comply with major international electronic signature frameworks, including but not limited to:</p>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li><strong>The ESIGN Act (USA):</strong> The Electronic Signatures in Global and National Commerce Act of 2000.</li>
+                <li><strong>eIDAS Regulation (EU):</strong> The Electronic Identification, Authentication and Trust Services Regulation (EU No 910/2014).</li>
+                <li><strong>The IT Act (India):</strong> The Information Technology Act, 2000, governing electronic governance and digital signatures.</li>
+              </ul>
+              <p className="mt-2">By proceeding, you agree that your electronic signature carries the same legal weight and binding effect as a handwritten, physical signature.</p>
+
+              <h4 className="font-bold text-zinc-100 mt-6 border-b border-zinc-700 pb-2">2. Your Consumer Rights</h4>
+              <p>Before you consent to do business with us electronically, you have the following legal rights regarding your electronic records and signatures:</p>
+              <ol className="list-decimal pl-5 space-y-2 mt-2">
+                <li><strong>Right to Paper Records:</strong> You have the right to request a physical, paper copy of any document you sign electronically on this platform.</li>
+                <li><strong>Right to Withdraw Consent:</strong> You may withdraw your consent to use electronic signatures and records at any time. (Note: Withdrawing consent does not invalidate previously signed documents).</li>
+                <li><strong>Right to Hardware/Software Transparency:</strong> You have the right to know the minimum hardware and software requirements necessary to access and retain these electronic records (e.g., a modern web browser and a PDF reader).</li>
+                <li><strong>Right to Copies:</strong> You have the fundamental right to download and save copies of all your executed electronic records for your personal archives.</li>
+                <li><strong>Right to Scope Awareness:</strong> You have the right to know that your consent applies to all documents, notices, and disclosures routed to you through this specific platform.</li>
+              </ol>
+
+              <h4 className="font-bold text-zinc-100 mt-6 border-b border-zinc-700 pb-2">3. Cryptography and Security</h4>
+              <p>Our service utilizes localized cryptographic key generation (ECDSA P-256). You acknowledge that your private key is encrypted using your personal password. We operate on a zero-knowledge architecture; if you lose your password, we cannot recover your private key or decrypt your identity signature.</p>
+
+              {/* Buffer to force scrolling */}
+              <div className="mt-12 opacity-50 italic text-center text-xs">Keep scrolling to accept...</div>
+              <div className="h-[30vh]"></div>
+              <p className="text-center font-bold text-zinc-100">End of Terms and Conditions</p>
+            </div>
+
+            {/* Modal Footer (Action Buttons) */}
+            <div className="p-6 border-t border-zinc-800 flex items-center justify-between bg-zinc-800/30 rounded-b-2xl">
+              <button
+                onClick={printTerms}
+                className="flex items-center gap-2 px-4 py-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+              >
+                <Printer size={18} /> Print
+              </button>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowTermsModal(false)}
+                  className="px-5 py-2 text-zinc-300 hover:bg-zinc-800 rounded-lg transition"
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={acceptTermsFromModal}
+                  disabled={!hasScrolledToBottom}
+                  className={`px-6 py-2 rounded-lg font-bold transition-all shadow-lg ${hasScrolledToBottom
+                    ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20"
+                    : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                    }`}
+                >
+                  {hasScrolledToBottom ? "I Accept" : "Scroll to Accept"}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

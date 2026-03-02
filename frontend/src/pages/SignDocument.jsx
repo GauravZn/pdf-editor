@@ -8,7 +8,7 @@ export default function SignDocumentPage() {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState('idle'); // idle | uploading | hashing | ready
   const [fileData, setFileData] = useState({ hash: '', filename: '' });
-  const [privateKey, setPrivateKey] = useState('');
+  const [password, setPassword] = useState('');
   const [res, setRes] = useState(null)
   const [duplicate, setDuplicate] = useState(false)
   const fileInputRef = useRef(null);
@@ -49,46 +49,33 @@ export default function SignDocumentPage() {
     }
   };
 
-
   const handleSign = async () => {
-
     try {
+      setStatus('hashing'); // Show loading state
 
-      console.log('hurray');
-      console.log("Privatekey:", privateKey)
-      console.log("hashKey:", fileData.hash)
-      const resp = await api.post('/esign/sign', { privateKey, pdfHash: fileData.hash })
-      console.log(resp.data);
-      const signatureData = resp.data;
-      const token = localStorage.getItem('token');
-      setRes(signatureData)
-      let saveSign;
-      if (signatureData && signatureData.signature) {
-        saveSign = await api.post('/esign/save-sign', { pdfHash: fileData.hash, sign: signatureData.signature }, {
-          headers: {
-            Authorization: `Bearer ${token}` // This defines req.user on the server
-          }
-        })
+      // 1. Pack the file and password into FormData
+      const formData = new FormData();
+      formData.append("document", file); // Must match backend's upload.single("document")
+      formData.append("password", password);
 
+      // 2. Make the single secure API call
+      const resp = await api.post('/esign/sign', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
 
-        console.log("one steell\n\n\n\n\n\n\n\n\n")
-        console.log('Success! Document recorded:', saveSign.data.message);
-      }
-      else {
-        console.error("No signature returned from the first step.");
-      }
-      console.log('helopp')
-      // console.log(saveSign);
-      console.log(res)
-    }
-    catch (err) {
+      // The backend has now signed AND saved the signature to Postgres automatically!
+      setRes(resp.data);
+      setStatus('ready');
 
+    } catch (err) {
+      setStatus('ready');
       if (err.response && err.response.status === 409) {
-        console.log("Duplicate detected");
         setDuplicate(true);
-        // Optional: alert(err.response.data.message);
+      } else if (err.response && err.response.status === 401) {
+        alert("Incorrect password. Cannot decrypt your signing key.");
       } else {
-        console.error("A different error occurred:", err.message);
+        console.error("Signing failed:", err.message);
+        alert(err.response?.data?.message || "An error occurred during signing.");
       }
     }
   }
@@ -164,24 +151,25 @@ export default function SignDocumentPage() {
                 </div>
               </div>
 
-              {/* Private Key Input */}
+              {/* Password Input for Key Decryption */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase">
-                  <Key size={14} /> Your Private Key
+                  <Key size={14} /> Authorize Signature
                 </div>
-                <textarea
-                  placeholder="Paste your private key (JWK) here..."
-                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 text-sm font-mono text-zinc-300 focus:ring-2 focus:ring-blue-500 outline-none h-32 resize-none transition-all"
-                  value={privateKey}
-                  onChange={(e) => setPrivateKey(e.target.value)}
+                <input
+                  type="password"
+                  placeholder="Enter your account password to unlock your key..."
+                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 text-sm text-zinc-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-inner"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
-                <p className="text-[10px] text-zinc-600 italic">
-                  * Note: We never store your private key. Signing happens locally in your browser.
+                <p className="text-[10px] text-zinc-500 italic">
+                  * Zero-Knowledge Security: Your password decrypts your signature key in memory. We never store your raw private key.
                 </p>
               </div>
 
               <button onClick={() => handleSign()}
-                disabled={!privateKey || duplicate || res}
+                disabled={!password || duplicate || res}
                 className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/10"
               >
                 <ShieldCheck size={20} />
