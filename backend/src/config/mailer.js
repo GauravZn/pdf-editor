@@ -20,9 +20,9 @@ const transporter = nodemailer.createTransport({
 // Verify connection
 transporter.verify((error, success) => {
     if (error) {
-        console.log("❌ Outlook Mailer Error:", error);
+        console.log("Outlook Mailer Error:", error);
     } else {
-        console.log("📧 Outlook Mailer is ready");
+        console.log("Outlook Mailer is ready");
     }
 });
 

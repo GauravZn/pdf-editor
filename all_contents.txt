@@ -56,29 +56,6 @@ connectDB();
 app.listen(process.env.PORT, () =>
   console.log("Server running on port", process.env.PORT)
 );
-[FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\backend\src\connectDB.js] 
-import mongoose from "mongoose"
-
-mongoose.connect('mongodb://127.0.0.1:27017/signature_finale')
-.then(()=>console.log("connected to the DB."))
-.catch((err)=>console.log("connection error ->", err))
-
-const signerSchema = new mongoose.Schema({
-    name:String,
-    email:String,
-    seq:Number,
-    status:{type: String, default:'pending'}
-})
-
-const workFlowSchema = new mongoose.Schema({
-    title:{type:String, default:"new signature request"},
-    signers:[signerSchema],
-    createdAt:{type:Date, default: Date.now}
-})
-
-const workFlow = new mongoose.model('Workflow', workFlowSchema)
-
-export default workFlow
 [FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\backend\src\db.js] 
 import dotenv from "dotenv";
 dotenv.config(); 
@@ -107,9 +84,9 @@ pool.query("SELECT 1")
   const connectDB = async () => {
     try {
         await mongoose.connect('mongodb://127.0.0.1:27017/signature_finale');
-        console.log("✅ Connected to the mongoose DB.");
+        console.log("Connected to the mongoose DB.");
     } catch (err) {
-        console.error("❌ Connection error ->", err);
+        console.error("Connection error ->", err);
         process.exit(1); // Stop the app if the DB fails
     }
   };
@@ -138,9 +115,9 @@ const transporter = nodemailer.createTransport({
 // Verify connection
 transporter.verify((error, success) => {
     if (error) {
-        console.log("❌ Outlook Mailer Error:", error);
+        console.log("Outlook Mailer Error:", error);
     } else {
-        console.log("📧 Outlook Mailer is ready");
+        console.log("Outlook Mailer is ready");
     }
 });
 
@@ -174,7 +151,7 @@ export const signup = async (req, res) => {
   }
 
   try {
-    // 1. Verify CAPTCHA with Google
+    //  Verify CAPTCHA with Google
     const captchaVerifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${captchaToken}`;
     const captchaRes = await fetch(captchaVerifyUrl, { method: "POST" });
     const captchaData = await captchaRes.json();
@@ -183,16 +160,16 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "CAPTCHA validation failed. Are you a bot?" });
     }
 
-    // 2. Cryptography Prep
+    //  Cryptography Preparation
     const hashedPassword = await bcrypt.hash(password, 10);
     const keyPair = await generateKeys();
     const encryptedPrivateKey = encryptPrivateKey(keyPair.privateKey, password);
 
-    // 3. Generate Email Verification Token & Expiration (24 hours)
+    // Generate Email Verification Token & Expiration (24 hours)
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); 
 
-    // 4. Create user in Postgres
+    // Create user in Postgres
     const userResult = await pool.query(
       `INSERT INTO users 
         (email, password, public_key, encrypted_private_key, username, verification_token, verification_expires_at, accepted_terms, is_verified) 
@@ -201,7 +178,7 @@ export const signup = async (req, res) => {
       [email, hashedPassword, keyPair.publicKey, encryptedPrivateKey, username, verificationToken, expiresAt, termsAccepted]
     );
 
-    // 5. Send the Verification Email
+    // Send the Verification Email
     const verifyLink = `http://localhost:5000/api/auth/verify?token=${verificationToken}`;
     await transporter.sendMail({
       from: `"PDF Editor Admin" <${process.env.EMAIL_USER}>`,
@@ -228,7 +205,7 @@ export const signup = async (req, res) => {
   }
 };
 
-// NEW: Verification Route Logic
+//  Verification Route Logic
 export const verifyEmail = async (req, res) => {
   const { token } = req.query;
 
@@ -269,7 +246,7 @@ export const login = async (req, res) => {
 
   const user = result.rows[0];
 
-  // NEW: Block login if they haven't clicked the email link
+  // Block login if they haven't clicked the email link
   if (!user.is_verified) {
     return res.status(403).json({ message: "Please check your email and verify your account before logging in." });
   }
@@ -387,8 +364,6 @@ const summarizeController = async (req, res) => {
 
         // replace the timestamp from the pdf's name.
         const nameOnly = filename.replace(/-(\d+)(\.pdf)*$/i, "").replace(/\.pdf$/i, "");
-
-        // console.log('nameonly->', nameOnly);
 
 
         const finalDownloadName = `Summary_${nameOnly}.pdf`;
@@ -716,7 +691,7 @@ export const viewPdf = async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.sendFile(filePath);
 
-        console.log('PDF Streamed successfully for:', workflow.title);
+        // console.log('PDF Streamed successfully for:', workflow.title);
     } catch (error) {
         console.error("View PDF Error:", error);
         res.status(500).json({ message: "Could not stream PDF" });
@@ -816,14 +791,11 @@ export default function auth(req, res, next) {
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-  console.log("martin")
     
     // Get the token
-    console.log(authHeader)
     const token = authHeader.split(" ")[1];
     
     // Verify token
-    console.log('rajesh')
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Attach user info to request
@@ -832,9 +804,6 @@ export default function auth(req, res, next) {
       username: decoded.username,
       email: decoded.email
     };
-    console.log('ship-sheep-keep-beep')
-
-    // console.log("onedirection",req.user)
 
     next();
   }
@@ -1024,10 +993,10 @@ export const notifyNextAvailableSigners = async (workflowId, completedSeq) => {
             };
 
             await transporter.sendMail(mailOptions);
-            console.log(`✅ Professional email sent to ${signer.email}`);
+            console.log(`Professional email sent to ${signer.email}`);
         }
     } catch (error) {
-        console.error("❌ Failed to trigger emails:", error);
+        console.error("Failed to trigger emails:", error);
     }
 };
 [FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\backend\src\utils\crypto.util.js] 
@@ -1507,7 +1476,6 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Watermark from "./pages/Watermark";
-import Esign from "./pages/RequestSignature";
 import Translate from "./pages/Translate";
 import Summarize from "./pages/Summarize";
 import Changefont from "./pages/Changefont";
@@ -1516,7 +1484,6 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import ReceiptGenerator from "./pages/RecieptGenerator";
 import SignPage from "./components/SignPage";
-import SignDocumentPage from "./pages/SignDocument";
 import EsignHub from "./pages/Esign";
 import RequestSignature from "./pages/RequestSignature"
 
@@ -1572,7 +1539,7 @@ export default function App() {
 
       {/* The Upload & Send Flow */}
       <Route path="/request-signature" element={<ProtectedRoute><RequestSignature /></ProtectedRoute>} />
-
+      <Route path="/sign/:workflowId/:signerId" element={<SignPage />} />
 
       <Route
         path="/translate"
@@ -1716,18 +1683,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </BrowserRouter>
   </React.StrictMode>
 );
-[FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\frontend\src\ProtectedRoute.jsx] 
-import { Navigate } from "react-router-dom";
-
-export default function ProtectedRoute({ children }) {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return children;
-}
 [FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\frontend\src\api\axios.js] 
 import axios from "axios";
 
@@ -1743,7 +1698,13 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default api;
@@ -2498,516 +2459,6 @@ const SignPage = () => {
 };
 
 export default SignPage;
-[FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\frontend\src\components\TrackPage.jsx] 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../api/axios';
-import { CheckCircle2, ShieldCheck, Check, ChevronDown, Download, Clock, ArrowLeft, FileText, Plus, FileSignature } from 'lucide-react'; // Added Plus and FileSignature
-
-const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '.';
-
-const TrackPage = () => {
-  const { workflowId } = useParams();
-  const navigate = useNavigate();
-  const [myWorkflows, setMyWorkflows] = useState([]);
-  const [selectedFlowId, setSelectedFlowId] = useState(workflowId || null);
-  const [workflow, setWorkflow] = useState(null);
-  const [status, setStatus] = useState('loading');
-
-  // Fetch ALL workflows for the sidebar
-  useEffect(() => {
-    const fetchMyWorkflows = async () => {
-      try {
-        const res = await api.get('/esign/my-workflows');
-        setMyWorkflows(res.data);
-        
-        // Auto-select the first workflow if they have one and didn't specify an ID
-        if (!selectedFlowId && res.data.length > 0) {
-          setSelectedFlowId(res.data[0]._id);
-        }
-      } catch (err) { console.error(err); }
-    };
-    fetchMyWorkflows();
-  }, []);
-
-  // Fetch DETAILS for the selected workflow
-  useEffect(() => {
-    if (!selectedFlowId) return;
-    const fetchWorkflowData = async () => {
-      try {
-        setStatus('loading');
-        const metaRes = await api.get(`/esign/workflow/${selectedFlowId}`);
-        setWorkflow(metaRes.data);
-        setStatus('idle');
-      } catch (err) { setStatus('error'); }
-    };
-    fetchWorkflowData();
-    const interval = setInterval(fetchWorkflowData, 10000); 
-    return () => clearInterval(interval);
-  }, [selectedFlowId]);
-
-  const groupedSteps = useMemo(() => {
-    if (!workflow?.signers) return [];
-    return Object.entries(
-      workflow.signers.reduce((acc, s) => {
-        if (!acc[s.seq]) acc[s.seq] = [];
-        acc[s.seq].push(s);
-        return acc;
-      }, {})
-    ).sort(([a], [b]) => Number(a) - Number(b));
-  }, [workflow]);
-
-  const handleDownload = async () => {
-    try {
-      setStatus('downloading');
-      const response = await api.get(`/esign/render-document/${selectedFlowId}`, { responseType: 'blob' });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${workflow.title.replace(/\s+/g, '_')}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      setStatus('idle');
-    } catch (error) {
-      alert("Failed to download document.");
-      setStatus('idle');
-    }
-  };
-
-  const isFullyCompleted = workflow?.signers.every(s => s.status === 'completed');
-
-  return (
-    <div className="h-screen bg-slate-50 flex font-sans overflow-hidden">
-      
-      {/* SIDEBAR: List of all Workflows */}
-      <div className="w-80 bg-white border-r border-slate-200 flex flex-col h-full shadow-lg z-20">
-        <div className="p-6 border-b border-slate-100">
-          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-widest mb-6 transition-colors">
-            <ArrowLeft size={14} /> Dashboard
-          </button>
-          
-          {/* NEW: The primary "Request Signatures" CTA */}
-          <button 
-            onClick={() => navigate('/esign')} 
-            className="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 mb-2"
-          >
-            <Plus size={18} strokeWidth={3} /> Request Signatures
-          </button>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {myWorkflows.length === 0 ? (
-            <div className="text-center mt-10 px-4">
-              <p className="text-sm text-slate-400 font-medium">No active workflows.</p>
-            </div>
-          ) : (
-            myWorkflows.map(flow => (
-              <div 
-                key={flow._id} 
-                onClick={() => { setSelectedFlowId(flow._id); window.history.pushState(null, '', `/track/${flow._id}`); }}
-                className={`p-4 rounded-xl cursor-pointer border-2 transition-all ${selectedFlowId === flow._id ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-white border-slate-100 hover:border-slate-300 text-slate-700'}`}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <FileText size={16} className={selectedFlowId === flow._id ? 'text-indigo-400' : 'text-slate-400'} />
-                  <p className="font-bold text-sm truncate">{flow.title}</p>
-                </div>
-                <p className={`text-[10px] uppercase font-bold tracking-wider ${selectedFlowId === flow._id ? 'text-slate-400' : 'text-slate-400'}`}>
-                  {new Date(flow.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* MAIN CONTENT: Tracking Details */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-y-auto bg-slate-50/50">
-        {!workflow ? (
-          /* NEW: Beautiful Empty State if nothing is selected or no workflows exist */
-          <div className="w-full flex flex-col items-center justify-center text-slate-400 p-8 m-4 rounded-3xl border border-slate-200/60 bg-white/50 border-dashed">
-            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6">
-              <FileSignature size={40} className="text-slate-300" />
-            </div>
-            <h2 className="text-2xl font-black text-slate-700 mb-2">No Document Selected</h2>
-            {myWorkflows.length === 0 ? (
-              <p className="text-sm font-medium text-slate-500 max-w-sm text-center">You haven't initiated any signature requests yet. Click the <strong className="text-indigo-500">Request Signatures</strong> button to upload your first document.</p>
-            ) : (
-              <p className="text-sm font-medium text-slate-500 max-w-sm text-center">Select a document from the sidebar to track its routing progress and download the finalized file.</p>
-            )}
-          </div>
-        ) : (
-          <>
-            {/* LEFT: STATUS OVERVIEW */}
-            <div className="flex-1 p-12 flex flex-col justify-center border-r border-slate-100 bg-white shadow-[20px_0_40px_-20px_rgba(0,0,0,0.02)] z-10">
-              <div className="w-16 h-16 bg-slate-50 shadow-sm border border-slate-100 text-slate-800 rounded-2xl flex items-center justify-center mb-6">
-                {isFullyCompleted ? <ShieldCheck size={32} className="text-emerald-500" /> : <Clock size={32} className="text-amber-500" />}
-              </div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">{workflow.title}</h1>
-              <p className="text-slate-500 text-sm mt-3 font-medium flex items-center gap-2">
-                Tracking ID: <span className="font-mono bg-slate-100 border border-slate-200 px-2 py-1 rounded text-xs">{workflow._id}</span>
-              </p>
-              
-              <div className="mt-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Current Status</h3>
-                {isFullyCompleted ? (
-                  <span className="inline-flex items-center gap-2 text-emerald-700 font-bold bg-emerald-100/50 border border-emerald-200 px-3 py-1.5 rounded-lg text-sm">
-                    <CheckCircle2 size={16} /> Fully Executed
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-2 text-amber-700 font-bold bg-amber-100/50 border border-amber-200 px-3 py-1.5 rounded-lg text-sm">
-                    <Clock size={16} /> Awaiting Signatures
-                  </span>
-                )}
-              </div>
-
-              <button 
-                onClick={handleDownload} 
-                disabled={status === 'downloading'} 
-                className="mt-8 w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl flex justify-center items-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-slate-900/20 disabled:opacity-70 disabled:active:scale-100"
-              >
-                {status === 'downloading' ? 'Generating Secure PDF...' : <><Download size={18} /> Download Document</>}
-              </button>
-            </div>
-
-            {/* RIGHT: THE PROGRESS TREE */}
-            <div className="w-full md:w-[400px] bg-slate-50 p-10 overflow-y-auto no-scrollbar">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 text-center bg-white py-2 rounded-lg shadow-sm border border-slate-100">Live Routing Order</h3>
-              <div className="relative flex flex-col items-center mt-4">
-                <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-slate-200 z-0"></div>
-                {groupedSteps.map(([seq, group], idx) => (
-                  <React.Fragment key={seq}>
-                    <div className="w-full relative py-3 flex justify-center z-10">
-                      <div className="flex gap-4">
-                        {group.map((signer) => {
-                          const isDone = signer.status === 'completed';
-                          return (
-                            <div key={signer._id} className="relative group cursor-default z-10 hover:z-[100]">
-                              <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-3 py-2 bg-slate-800 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col items-center shadow-xl w-max z-[100]">
-                                <span className="text-[11px] font-bold">{signer.name}</span>
-                                <span className="text-[9px] text-slate-300">{signer.email}</span>
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-slate-800"></div>
-                              </div>
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-[12px] font-bold border-2 transition-all shadow-sm relative z-20 ${isDone ? 'bg-emerald-500 border-emerald-600 text-white' : 'bg-white border-slate-300 text-slate-500'}`}>
-                                {isDone ? <Check size={20} strokeWidth={3} /> : getInitials(signer.name)}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {idx !== groupedSteps.length - 1 && (
-                      <div className="w-full flex justify-center py-2 relative z-0">
-                        <div className="bg-slate-100 p-1 rounded-full border border-slate-200 text-slate-400"><ChevronDown size={14} strokeWidth={3} /></div>
-                      </div>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default TrackPage;
-[FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\frontend\src\pages\AllSignersPage.jsx] 
-import React, { useState, useRef } from 'react';
-import { Upload, ArrowLeft, ShieldCheck, Cpu, Hash, Key, CheckCircle2, Loader2, User, FileDown } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import api from "../api/axios";
-
-export default function SignDocumentPage() {
-    const [file, setFile] = useState(null);
-    const [status, setStatus] = useState('idle'); // idle | uploading | hashing | ready
-    const [fileData, setFileData] = useState({ hash: '', filename: '' });
-    const [res, setRes] = useState(null)
-    const [allSigners, setAllSigners] = useState([])
-    const fileInputRef = useRef(null);
-    const navigate = useNavigate();
-
-
-    const downloadSignatures = () => {
-        if (!allSigners || allSigners.length === 0) return;
-
-        const exportDateObject = new Date(Date.now())
-        const formattedExportDate = exportDateObject.toLocaleDateString('en-GB', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        })
-        const formattedExportTime = exportDateObject.toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        })
-
-        // Format the header
-        let content = `Document: ${fileData.filename}\n`;
-        content += `Fingerprint: ${fileData.hash}\n`;
-        content += `Export Date: ${formattedExportDate}, ${formattedExportTime}\n`;
-        content += `\n-------------------------------------------------------------------------------------------------------------------------------------------\n`;
-
-        // Map through signers and format each entry
-        allSigners.forEach((signer, index) => {
-            // Create the specific date format: Day, DD/MM/YYYY
-            const dateObj = new Date(signer.timestamp);
-            const formattedDate = dateObj.toLocaleDateString('en-GB', {
-                weekday: 'long',
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
-            const formattedTime = dateObj.toLocaleTimeString('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-
-            content += `Signer #${index + 1}\n`;
-            content += `Username:  ${signer.signer_username}\n`;
-            content += `Email:     ${signer.signer_email}\n`;
-            content += `Date:      ${formattedDate}, ${formattedTime}\n`;
-            content += `Signature: ${signer.signature}\n`;
-            content += `-------------------------------------------------------------------------------------------------------------------------------------------\n`;
-
-
-        });
-
-        // Create the file and trigger download
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-
-        // Set filename: pdf_name_all_signatures.txt
-        const baseName = fileData.filename.replace(/\.[^/.]+$/, ""); // Removes .pdf extension
-        link.download = `${baseName}_all_signatures.txt`;
-
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-
-        // Cleanup
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    };
-
-    const handleFileChange = async (e) => {
-        const selectedFile = e.target.files[0];
-        if (!selectedFile || selectedFile.type !== 'application/pdf') return;
-
-        setFile(selectedFile);
-        setStatus('uploading');
-
-        try {
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-
-            // Step 1: Uploading
-            const response = await api.post('/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                onUploadProgress: (progressEvent) => {
-                    if (progressEvent.progress === 1) setStatus('hashing');
-                }
-            });
-
-            const { hash, filename } = response.data;
-
-            const result = await Promise.all([
-                api.get('/esign/all-signers', { params: { hash } }),
-                new Promise(resolve => setTimeout(resolve, 1000))
-            ]);
-
-            setFileData({ hash: hash, filename: filename })
-            setAllSigners(result[0].data[0].signatures || []);
-            setStatus('ready');
-
-
-        } catch (err) {
-            console.error(err);
-            setStatus('idle');
-            alert("Upload failed. Please try again.");
-        }
-    };
-
-
-    return (
-        <div className="min-h-screen bg-[#09090b] text-zinc-100 font-sans flex flex-col items-center py-12 px-6">
-
-            {/* Navigation */}
-            <div className="max-w-3xl w-full flex justify-start mb-12">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="group flex items-center gap-2 text-zinc-500 hover:text-white transition-colors"
-                >
-                    <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                    <span className="text-sm font-bold uppercase tracking-wider">Back to Dashboard</span>
-                </button>
-            </div>
-
-            <div className="max-w-2xl w-full">
-                {/* Step Header */}
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold mb-3">See All Signers</h1>
-                    <p className="text-zinc-500">Securely upload a pdf and see all the signers.</p>
-                </div>
-
-                {/* Main Interaction Card */}
-                <div className="bg-[#121214] border border-zinc-800 rounded-3xl p-8 shadow-2xl">
-
-                    {/* STATE: IDLE */}
-                    {status === 'idle' && (
-                        <div
-                            onClick={() => fileInputRef.current.click()}
-                            className="group border-2 border-dashed border-zinc-800 hover:border-blue-500 hover:bg-blue-500/5 transition-all rounded-2xl p-16 text-center cursor-pointer"
-                        >
-                            <Upload size={48} className="mx-auto mb-4 text-zinc-700 group-hover:text-blue-500 transition-colors" />
-                            <p className="text-zinc-400 font-medium">Click to upload the PDF</p>
-                            <p className="text-zinc-600 text-xs mt-2">Maximum file size: 10MB</p>
-                        </div>
-                    )}
-
-                    {/* STATE: UPLOADING / HASHING */}
-                    {(status === 'uploading' || status === 'hashing') && (
-                        <div className="py-12 flex flex-col items-center text-center space-y-6">
-                            <div className="relative">
-                                <Loader2 size={64} className="text-blue-500 animate-spin" />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    {status === 'uploading' ? <Upload size={20} /> : <Cpu size={20} />}
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold capitalize">{status}...</h3>
-                                <p className="text-zinc-500 text-sm mt-1">
-                                    {status === 'uploading' ? "Sending file to secure server" : "Getting all signers"}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* STATE: READY TO SIGN */}
-                    {status === 'ready' && (
-                        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                            {/* Hash Display */}
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase">
-                                    <Hash size={14} /> Document Fingerprint (Hash)
-                                </div>
-                                <div className="bg-black/40 border border-zinc-800 p-4 rounded-xl flex items-center justify-between">
-                                    <code className="text-blue-400 text-xs font-mono break-all leading-relaxed">
-                                        {fileData.hash}
-                                    </code>
-                                    <CheckCircle2 size={18} className="text-emerald-500 shrink-0 ml-4" />
-                                </div>
-                            </div>
-
-
-
-                            {/* Signer List Section */}
-                            {status === 'ready' && (
-                                <div className="mt-8 pt-6 border-t border-zinc-800 space-y-4">
-                                    <div className="flex items-center justify-between text-zinc-500 text-xs font-bold uppercase tracking-wider">
-                                        <div className="flex items-center gap-2">
-                                            <User size={14} className="text-blue-500" />
-                                            Verified Signers ({allSigners.length})
-                                        </div>
-
-                                        {allSigners.length > 0 && (
-                                            <button
-                                                onClick={downloadSignatures}
-                                                className="relative group/btn flex items-center gap-2 px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/20 hover:border-blue-500/50 transition-all duration-300 active:scale-95 shadow-[0_0_15px_rgba(59,130,246,0.1)] hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
-                                            >
-                                                {/* Subtle inner glow for a "glass" effect */}
-                                                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
-
-                                                <FileDown size={14} className="relative z-10 group-hover/btn:-translate-y-0.5 transition-transform" />
-
-                                                <span className="relative z-10 text-[11px] font-bold tracking-tight">
-                                                    EXPORT LOG
-                                                </span>
-                                            </button>
-                                        )}
-
-                                    </div>
-
-                                    <div className="grid gap-3">
-                                        {allSigners.length > 0 ? (
-                                            allSigners.map((signerData, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 p-4 rounded-2xl hover:border-blue-500/30 transition-all group"
-                                                >
-                                                    {/* Left Side: User Info */}
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/20 group-hover:scale-110 transition-transform">
-                                                            <User size={18} className="text-blue-400" />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <p className="text-zinc-200 font-bold group-hover:text-white transition-colors">
-                                                                {signerData.signer_username}
-                                                            </p>
-                                                            <span className="text-[11px] font-medium text-zinc-500">{signerData.signer_email}</span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Right Side: Signature & Timestamp */}
-                                                    <div className="flex flex-col items-end gap-2 max-w-[50%]">
-                                                        {/* Signature Badge */}
-                                                        <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-zinc-800 group-hover:border-blue-500/20 transition-all">
-                                                            <Key size={10} className="text-blue-500/70" />
-                                                            <code className="text-[10px] text-blue-400/90 font-mono truncate max-w-[150px]">
-                                                                {signerData.signature}
-                                                            </code>
-                                                        </div>
-
-                                                        {/* Timestamp Badge */}
-                                                        <div className="flex items-center gap-1.5 text-zinc-500">
-                                                            <ShieldCheck size={11} className="text-emerald-500/60" />
-                                                            <span className="text-[10px] font-medium uppercase tracking-tight">
-                                                                {new Date(signerData.timestamp).toLocaleDateString(undefined, {
-                                                                    month: 'short',
-                                                                    day: 'numeric',
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit'
-                                                                })}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="text-center py-10 bg-zinc-900/30 rounded-2xl border border-dashed border-zinc-800">
-                                                <p className="text-zinc-500 text-sm italic">No signatures found for this document.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                        </div>
-                    )}
-
-
-
-
-                </div>
-            </div>
-
-            <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept=".pdf"
-                onChange={handleFileChange}
-            />
-        </div>
-    );
-}
 [FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\frontend\src\pages\Changefont.jsx] 
 // placeholder page for Changefont feature.
 export default function Changefont() {
@@ -3056,11 +2507,11 @@ export default function Dashboard() {
   useEffect(()=>{
 
     const getUser = async()=>{
-      console.log("")
+      // console.log("")
       const response = await api.get('/get-user')  ;
       setUser(response.data)
-      console.log("exe",response.data)
-      console.log(user)
+      // console.log("exe",response.data)
+      // console.log(user)
     }
     
     getUser()
@@ -3602,142 +3053,6 @@ export default function ReceiptGenerator() {
     </div>
   );
 }
-[FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\frontend\src\pages\RegistryPage.jsx] 
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Key, Copy, Check, Search, Users } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import api from "../api/axios";
-
-export default function RegisteredUsersPage() {
-    const [users, setUsers] = useState([]);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [copiedKey, setCopiedKey] = useState(null);
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const response = await api.get('/esign/all-users');
-                setUsers(response.data);
-            } catch (err) {
-                console.error("Failed to fetch users", err);
-            }
-        };
-        fetchUsers();
-    }, []);
-
-    const handleCopy = (publicKey) => {
-        navigator.clipboard.writeText(publicKey);
-        setCopiedKey(publicKey);
-        setTimeout(() => setCopiedKey(null), 2000);
-    };
-
-    const filteredUsers = users.filter(user =>
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Inside RegisteredUsersPage.jsx
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                // Ensure this URL matches your backend port and route prefix
-                const response = await api.get('esign/all-users');
-
-                // response.data will now be the array from your PostgreSQL 'users' table
-                setUsers(response.data);
-            } catch (err) {
-                console.error("Failed to fetch users:", err);
-                // Optional: set an error state to show a message to the user
-            }
-        };
-        fetchUsers();
-    }, []);
-
-    return (
-        <div className="min-h-screen bg-[#09090b] text-zinc-100 font-sans py-12 px-6 flex flex-col items-center">
-
-            {/* Header & Search */}
-            <div className="max-w-4xl w-full space-y-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="group flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-4"
-                        >
-                            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                            <span className="text-xs font-bold uppercase tracking-widest">Back</span>
-                        </button>
-                        <h1 className="text-3xl font-bold flex items-center gap-3">
-                            <Users className="text-blue-500" size={32} />
-                            Directory
-                        </h1>
-                        <p className="text-zinc-500 mt-1">View and manage all registered system users.</p>
-                    </div>
-
-                    <div className="relative group max-w-sm w-full">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-blue-500 transition-colors" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search by name or email..."
-                            className="w-full bg-[#121214] border border-zinc-800 rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                {/* Users Grid */}
-                <div className="grid gap-4">
-                    {filteredUsers.length > 0 ? (
-                        filteredUsers.map((user) => (
-                            <div
-                                key={user.id}
-                                className="bg-[#121214] border border-zinc-800 p-5 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-zinc-700 transition-all group"
-                            >
-                                {/* User Identity */}
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
-                                        <User size={24} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-zinc-100 tracking-tight text-lg">@{user.username}</h3>
-                                        <div className="flex items-center gap-2 text-zinc-500 text-sm">
-                                            <Mail size={14} />
-                                            <span>{user.email}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Public Key Section */}
-                                <div className="flex flex-col md:items-end gap-2 flex-1 max-w-md">
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-                                        <Key size={12} /> Public Key
-                                    </div>
-                                    <div className="w-full bg-black/40 border border-zinc-800 rounded-xl p-2 pl-4 flex items-center justify-between gap-3 group/key hover:border-zinc-600 transition-colors">
-                                        <code className="text-[11px] font-mono text-blue-400/80 truncate">
-                                            {user.public_key}
-                                        </code>
-                                        <button
-                                            onClick={() => handleCopy(user.public_key)}
-                                            className="p-2 bg-zinc-800 hover:bg-blue-600 rounded-lg text-zinc-400 hover:text-white transition-all shrink-0"
-                                            title="Copy Key"
-                                        >
-                                            {copiedKey === user.public_key ? <Check size={16} /> : <Copy size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="text-center py-20 bg-[#121214] rounded-3xl border border-dashed border-zinc-800">
-                            <p className="text-zinc-500 font-medium">No users found matching your search.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
 [FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\frontend\src\pages\RequestSignature.jsx] 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -4151,373 +3466,6 @@ export default function ScannedToStandard() {
           Coming soon 🚧
         </div>
       </div>
-    </div>
-  );
-}
-[FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\frontend\src\pages\SignatureHistoryPage.jsx] 
-import React, { useState, useEffect } from 'react';
-import { 
-    FileText, 
-    Clock, 
-    ExternalLink, 
-    ShieldCheck, 
-    ArrowLeft, 
-    Search,
-    Fingerprint
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import api from "../api/axios";
-
-const SignatureHistoryPage = () => {
-    const [history, setHistory] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
-    const navigate = useNavigate();
-
-    // 1. Fetch the joined data (Signature + Filename)
-    useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                // This calls the route we built with the INNER JOIN
-                const response = await api.get('/esign/history');
-                setHistory(response.data);
-            } catch (err) {
-                console.error("Failed to fetch signature history:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchHistory();
-    }, []);
-
-    // 2. Filter logic for the search bar
-    const filteredHistory = history.filter(item => 
-        item.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.file_hash.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="min-h-screen bg-[#09090b] text-zinc-100 py-12 px-6">
-            <div className="max-w-4xl mx-auto space-y-8">
-                
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="group flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-4"
-                        >
-                            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                            <span className="text-xs font-bold uppercase tracking-widest">Dashboard</span>
-                        </button>
-                        <h1 className="text-3xl font-bold flex items-center gap-3">
-                            <Fingerprint className="text-blue-500" size={32} />
-                            Your Signature History
-                        </h1>
-                        <p className="text-zinc-500 mt-1">
-                            Verify and access every document you've digitally signed.
-                        </p>
-                    </div>
-
-                    {/* Search Bar */}
-                    <div className="relative group max-w-sm w-full">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-blue-500 transition-colors" size={18} />
-                        <input 
-                            type="text"
-                            placeholder="Search by filename or hash..."
-                            className="w-full bg-[#121214] border border-zinc-800 rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                {/* Main List */}
-                <div className="grid gap-4">
-                    {filteredHistory.length > 0 ? (
-                        filteredHistory.map((item, index) => (
-                            <div 
-                                key={index} 
-                                className="bg-[#121214] border border-zinc-800 p-6 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-zinc-700 transition-all group"
-                            >
-                                <div className="flex items-start gap-4 flex-1">
-                                    <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
-                                        <FileText size={24} />
-                                    </div>
-                                    <div className="space-y-2 overflow-hidden">
-                                        <h3 className="font-bold text-zinc-100 text-lg truncate pr-4">
-                                            {item.filename}
-                                        </h3>
-                                        <div className="flex flex-wrap items-center gap-4 text-[11px] font-bold text-zinc-500 uppercase tracking-tighter">
-                                            <div className="flex items-center gap-1.5 bg-zinc-800/50 px-2 py-1 rounded-md">
-                                                <Clock size={12} />
-                                                {new Date(item.timestamp).toLocaleString()}
-                                            </div>
-                                            <div className="flex items-center gap-1.5 text-emerald-500">
-                                                <ShieldCheck size={12} />
-                                                Signature Verified
-                                            </div>
-                                        </div>
-                                        {/* Signature Fragment */}
-                                        <div className="mt-2 text-[10px] font-mono text-zinc-600 bg-black/30 p-2 rounded-lg border border-zinc-800/50 truncate">
-                                            SIGNATURE: {item.signature}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Clickable View PDF Link */}
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <a 
-                                        href={`http://localhost:5000/uploads/${item.filename}`} 
-                                        target="_blank" 
-                                        rel="noreferrer"
-                                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-6 py-3 rounded-2xl transition-all shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
-                                    >
-                                        View Document
-                                        <ExternalLink size={14} />
-                                    </a>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="text-center py-20 bg-[#121214] rounded-3xl border border-dashed border-zinc-800">
-                            <p className="text-zinc-500 font-medium">No signature records found.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default SignatureHistoryPage;
-[FILE: C:\Users\gaurav.jain\Desktop\pdf-editor\frontend\src\pages\SignDocument.jsx] 
-import React, { useState, useRef } from 'react';
-import { Upload, ArrowLeft, ShieldCheck, Cpu, Hash, Key, CheckCircle2, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import api from "../api/axios";
-// import saveSign from '../../../backend/src/utils/saveSign';
-
-export default function SignDocumentPage() {
-  const [file, setFile] = useState(null);
-  const [status, setStatus] = useState('idle'); // idle | uploading | hashing | ready
-  const [fileData, setFileData] = useState({ hash: '', filename: '' });
-  const [password, setPassword] = useState('');
-  const [res, setRes] = useState(null)
-  const [duplicate, setDuplicate] = useState(false)
-  const fileInputRef = useRef(null);
-  const navigate = useNavigate();
-
-  const handleFileChange = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile || selectedFile.type !== 'application/pdf') return;
-
-    setFile(selectedFile);
-    setStatus('uploading');
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-    try {
-      // Step 1: Uploading
-      const response = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.progress === 1) setStatus('hashing');
-        }
-      });
-
-      // Simulated delay for "Hashing" feedback so user sees the process
-      setTimeout(() => {
-        setFileData({
-          hash: response.data.hash,
-          filename: response.data.filename
-        });
-        setStatus('ready');
-      }, 1500);
-
-    } catch (err) {
-      console.error(err);
-      setStatus('idle');
-      alert("Upload failed. Please try again.");
-    }
-  };
-
-  const handleSign = async () => {
-    try {
-      setStatus('hashing'); // Show loading state
-
-      // 1. Pack the file and password into FormData
-      const formData = new FormData();
-      formData.append("document", file); // Must match backend's upload.single("document")
-      formData.append("password", password);
-
-      // 2. Make the single secure API call
-      const resp = await api.post('/esign/sign', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      // The backend has now signed AND saved the signature to Postgres automatically!
-      setRes(resp.data);
-      setStatus('ready');
-
-    } catch (err) {
-      setStatus('ready');
-      if (err.response && err.response.status === 409) {
-        setDuplicate(true);
-      } else if (err.response && err.response.status === 401) {
-        alert("Incorrect password. Cannot decrypt your signing key.");
-      } else {
-        console.error("Signing failed:", err.message);
-        alert(err.response?.data?.message || "An error occurred during signing.");
-      }
-    }
-  }
-
-
-  return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 font-sans flex flex-col items-center py-12 px-6">
-
-      {/* Navigation */}
-      <div className="max-w-3xl w-full flex justify-start mb-12">
-        <button
-          onClick={() => navigate(-1)}
-          className="group flex items-center gap-2 text-zinc-500 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-          <span className="text-sm font-bold uppercase tracking-wider">Back to Dashboard</span>
-        </button>
-      </div>
-
-      <div className="max-w-2xl w-full">
-        {/* Step Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold mb-3">Sign Document</h1>
-          <p className="text-zinc-500">Securely hash and sign your PDF using your private key.</p>
-        </div>
-
-        {/* Main Interaction Card */}
-        <div className="bg-[#121214] border border-zinc-800 rounded-3xl p-8 shadow-2xl">
-
-          {/* STATE: IDLE */}
-          {status === 'idle' && (
-            <div
-              onClick={() => fileInputRef.current.click()}
-              className="group border-2 border-dashed border-zinc-800 hover:border-blue-500 hover:bg-blue-500/5 transition-all rounded-2xl p-16 text-center cursor-pointer"
-            >
-              <Upload size={48} className="mx-auto mb-4 text-zinc-700 group-hover:text-blue-500 transition-colors" />
-              <p className="text-zinc-400 font-medium">Click to upload the PDF you wish to sign</p>
-              <p className="text-zinc-600 text-xs mt-2">Maximum file size: 10MB</p>
-            </div>
-          )}
-
-          {/* STATE: UPLOADING / HASHING */}
-          {(status === 'uploading' || status === 'hashing') && (
-            <div className="py-12 flex flex-col items-center text-center space-y-6">
-              <div className="relative">
-                <Loader2 size={64} className="text-blue-500 animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  {status === 'uploading' ? <Upload size={20} /> : <Cpu size={20} />}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold capitalize">{status}...</h3>
-                <p className="text-zinc-500 text-sm mt-1">
-                  {status === 'uploading' ? "Sending file to secure server" : "Computing cryptographic SHA-256 fingerprint"}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* STATE: READY TO SIGN */}
-          {status === 'ready' && (
-            <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-              {/* Hash Display */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase">
-                  <Hash size={14} /> Document Fingerprint (Hash)
-                </div>
-                <div className="bg-black/40 border border-zinc-800 p-4 rounded-xl flex items-center justify-between">
-                  <code className="text-blue-400 text-xs font-mono break-all leading-relaxed">
-                    {fileData.hash}
-                  </code>
-                  <CheckCircle2 size={18} className="text-emerald-500 shrink-0 ml-4" />
-                </div>
-              </div>
-
-              {/* Password Input for Key Decryption */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase">
-                  <Key size={14} /> Authorize Signature
-                </div>
-                <input
-                  type="password"
-                  placeholder="Enter your account password to unlock your key..."
-                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 text-sm text-zinc-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-inner"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <p className="text-[10px] text-zinc-500 italic">
-                  * Zero-Knowledge Security: Your password decrypts your signature key in memory. We never store your raw private key.
-                </p>
-              </div>
-
-              <button onClick={() => handleSign()}
-                disabled={!password || duplicate || res}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/10"
-              >
-                <ShieldCheck size={20} />
-                Sign This Document
-              </button>
-            </div>
-          )}
-
-
-          {/* Feedback Section: Success or Duplicate Warning */}
-          <div className="mt-6 space-y-4">
-
-            {/* SUCCESS MESSAGE */}
-            {!duplicate && res && (
-              <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl animate-in fade-in slide-in-from-bottom-2">
-                <CheckCircle2 className="text-emerald-500 shrink-0" size={20} />
-                <p className="text-emerald-200 text-sm font-medium">
-                  {res.message || "Document signed successfully!"}
-                </p>
-              </div>
-            )}
-
-            {/* DUPLICATE WARNING */}
-            {duplicate && (
-              <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl animate-in fade-in slide-in-from-bottom-2">
-                <ShieldCheck className="text-amber-500 shrink-0" size={20} />
-                <div>
-                  <p className="text-amber-200 text-sm font-bold">Already Signed</p>
-                  <p className="text-amber-500/80 text-xs">
-                    Your signature is already recorded in this document's audit trail.
-                  </p>
-                </div>
-              </div>
-            )}
-
-          </div>
-
-        </div>
-      </div>
-
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept=".pdf"
-        onChange={handleFileChange}
-      />
     </div>
   );
 }
@@ -5043,7 +3991,7 @@ export default function WatermarkTool() {
       const viewport = page.getViewport({ scale: 1 });
 
       // Width and Height are in points (1pt = 1/72 inch)
-      console.log(`Width: ${viewport.width}pt, Height: ${viewport.height}pt`);
+      // console.log(`Width: ${viewport.width}pt, Height: ${viewport.height}pt`);
 
       return {
         width: viewport.width,
@@ -5593,7 +4541,7 @@ export const createWatermarkImage = (text, settings) => {
     ctx.textBaseline = 'middle'; // vertically center text when drawing
 
     ctx.fillText(text, canvas.width / 2, canvas.height / 2); // draw the watermark text centered on the canvas
-    console.log('new image generated')
+    // console.log('new image generated')
     resolve(canvas.toDataURL('image/png')); // convert canvas to PNG data URL and resolve the Promise with it
   });
 };

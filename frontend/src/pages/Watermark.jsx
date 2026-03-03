@@ -23,7 +23,7 @@ export default function WatermarkTool() {
       const viewport = page.getViewport({ scale: 1 });
 
       // Width and Height are in points (1pt = 1/72 inch)
-      console.log(`Width: ${viewport.width}pt, Height: ${viewport.height}pt`);
+      // console.log(`Width: ${viewport.width}pt, Height: ${viewport.height}pt`);
 
       return {
         width: viewport.width,

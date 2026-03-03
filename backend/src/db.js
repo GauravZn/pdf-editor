@@ -25,9 +25,9 @@ pool.query("SELECT 1")
   const connectDB = async () => {
     try {
         await mongoose.connect('mongodb://127.0.0.1:27017/signature_finale');
-        console.log("✅ Connected to the mongoose DB.");
+        console.log("Connected to the mongoose DB.");
     } catch (err) {
-        console.error("❌ Connection error ->", err);
+        console.error("Connection error ->", err);
         process.exit(1); // Stop the app if the DB fails
     }
   };

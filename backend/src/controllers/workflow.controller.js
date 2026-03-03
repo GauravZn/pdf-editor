@@ -165,7 +165,7 @@ export const viewPdf = async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.sendFile(filePath);
 
-        console.log('PDF Streamed successfully for:', workflow.title);
+        // console.log('PDF Streamed successfully for:', workflow.title);
     } catch (error) {
         console.error("View PDF Error:", error);
         res.status(500).json({ message: "Could not stream PDF" });

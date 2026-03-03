@@ -45,9 +45,9 @@ export const notifyNextAvailableSigners = async (workflowId, completedSeq) => {
             };
 
             await transporter.sendMail(mailOptions);
-            console.log(`✅ Professional email sent to ${signer.email}`);
+            console.log(`Professional email sent to ${signer.email}`);
         }
     } catch (error) {
-        console.error("❌ Failed to trigger emails:", error);
+        console.error("Failed to trigger emails:", error);
     }
 };

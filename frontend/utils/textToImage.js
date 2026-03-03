@@ -25,7 +25,7 @@ export const createWatermarkImage = (text, settings) => {
     ctx.textBaseline = 'middle'; // vertically center text when drawing
 
     ctx.fillText(text, canvas.width / 2, canvas.height / 2); // draw the watermark text centered on the canvas
-    console.log('new image generated')
+    // console.log('new image generated')
     resolve(canvas.toDataURL('image/png')); // convert canvas to PNG data URL and resolve the Promise with it
   });
 };

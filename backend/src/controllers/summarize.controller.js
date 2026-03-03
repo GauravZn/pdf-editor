@@ -24,8 +24,6 @@ const summarizeController = async (req, res) => {
         // replace the timestamp from the pdf's name.
         const nameOnly = filename.replace(/-(\d+)(\.pdf)*$/i, "").replace(/\.pdf$/i, "");
 
-        // console.log('nameonly->', nameOnly);
-
 
         const finalDownloadName = `Summary_${nameOnly}.pdf`;
 

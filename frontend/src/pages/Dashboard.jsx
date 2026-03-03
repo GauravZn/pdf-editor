@@ -10,11 +10,11 @@ export default function Dashboard() {
   useEffect(()=>{
 
     const getUser = async()=>{
-      console.log("")
+      // console.log("")
       const response = await api.get('/get-user')  ;
       setUser(response.data)
-      console.log("exe",response.data)
-      console.log(user)
+      // console.log("exe",response.data)
+      // console.log(user)
     }
     
     getUser()

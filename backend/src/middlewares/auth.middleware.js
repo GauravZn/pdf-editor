@@ -7,14 +7,11 @@ export default function auth(req, res, next) {
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-  console.log("martin")
     
     // Get the token
-    console.log(authHeader)
     const token = authHeader.split(" ")[1];
     
     // Verify token
-    console.log('rajesh')
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Attach user info to request
@@ -23,9 +20,6 @@ export default function auth(req, res, next) {
       username: decoded.username,
       email: decoded.email
     };
-    console.log('ship-sheep-keep-beep')
-
-    // console.log("onedirection",req.user)
 
     next();
   }
